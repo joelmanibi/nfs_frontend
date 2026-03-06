@@ -25,7 +25,7 @@ export default function FileList({ files = [], mode, loading }) {
           {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
             <div
               key={i}
-              className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 animate-pulse h-44"
+              className="bg-nfs-100/60 border border-nfs-border rounded-2xl p-4 animate-pulse h-44"
             />
           ))}
         </div>
@@ -40,9 +40,9 @@ export default function FileList({ files = [], mode, loading }) {
       ? 'Aucun fichier reçu pour le moment.'
       : 'Aucun fichier envoyé pour le moment.';
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+      <div className="flex flex-col items-center justify-center py-20 text-nfs-muted/50">
         <Icon size={40} className="mb-3 opacity-30" />
-        <p className="text-sm">{label}</p>
+        <p className="text-sm text-nfs-muted">{label}</p>
       </div>
     );
   }

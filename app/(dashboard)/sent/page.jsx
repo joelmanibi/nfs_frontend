@@ -33,13 +33,13 @@ export default function SentPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-900/40 border border-green-700/30">
-            <Send size={17} className="text-green-400" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 border border-green-200">
+            <Send size={18} className="text-green-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Fichiers envoyés</h1>
+            <h1 className="text-xl font-bold text-nfs-dark">Fichiers envoyés</h1>
             {!loading && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-nfs-muted">
                 {count} fichier{count > 1 ? 's' : ''} envoyé{count > 1 ? 's' : ''}
               </p>
             )}

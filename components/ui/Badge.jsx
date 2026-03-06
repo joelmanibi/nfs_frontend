@@ -1,11 +1,11 @@
 'use client';
 
 const colors = {
-  blue:   'bg-blue-900/40 text-blue-300 border border-blue-700/50',
-  green:  'bg-green-900/40 text-green-300 border border-green-700/50',
-  red:    'bg-red-900/40 text-red-300 border border-red-700/50',
-  yellow: 'bg-yellow-900/40 text-yellow-300 border border-yellow-700/50',
-  slate:  'bg-slate-700/60 text-slate-300 border border-slate-600/50',
+  blue:   'bg-nfs-100 text-nfs-dark border border-nfs-border',
+  green:  'bg-green-50 text-green-700 border border-green-200',
+  red:    'bg-red-50 text-red-600 border border-red-200',
+  yellow: 'bg-amber-50 text-amber-700 border border-amber-200',
+  slate:  'bg-gray-100 text-gray-600 border border-gray-200',
 };
 
 /**

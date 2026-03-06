@@ -81,19 +81,19 @@ export default function UploadPage() {
   return (
     <div className="space-y-6 max-w-xl">
       <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-900/40 border border-blue-700/30">
-          <Upload size={17} className="text-blue-400" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-nfs-100 border border-nfs-border">
+          <Upload size={18} className="text-nfs-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Envoyer un fichier</h1>
-          <p className="text-xs text-slate-500">Chiffrement AES-256 de bout en bout</p>
+          <h1 className="text-xl font-bold text-nfs-dark">Envoyer un fichier</h1>
+          <p className="text-xs text-nfs-muted">Chiffrement AES-256 de bout en bout</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-nfs-border rounded-2xl p-6 space-y-5 shadow-lg shadow-nfs-dark/5">
         {/* Drop zone */}
         <div>
-          <p className="text-sm font-medium text-slate-300 mb-1.5">Fichier</p>
+          <p className="text-sm font-medium text-nfs-dark mb-1.5">Fichier</p>
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
@@ -102,12 +102,12 @@ export default function UploadPage() {
             className={[
               'relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl py-10 px-4 cursor-pointer transition-all duration-200',
               dragging
-                ? 'border-blue-500 bg-blue-900/10'
+                ? 'border-nfs-primary bg-nfs-100'
                 : file
-                ? 'border-green-600/50 bg-green-900/10'
+                ? 'border-green-400 bg-green-50'
                 : errors.file
-                ? 'border-red-500/60 bg-red-900/5'
-                : 'border-slate-700 hover:border-slate-500 bg-slate-800/30',
+                ? 'border-red-400 bg-red-50'
+                : 'border-nfs-border hover:border-nfs-primary/50 bg-nfs-bg',
             ].join(' ')}
           >
             <input
@@ -119,28 +119,28 @@ export default function UploadPage() {
             />
             {file ? (
               <div className="flex items-center gap-3">
-                <FileText size={22} className="text-green-400 shrink-0" />
+                <FileText size={22} className="text-green-500 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-slate-100">{file.name}</p>
-                  <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                  <p className="text-sm font-medium text-nfs-dark">{file.name}</p>
+                  <p className="text-xs text-nfs-muted">{formatFileSize(file.size)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="ml-2 text-slate-500 hover:text-red-400 transition-colors"
+                  className="ml-2 text-nfs-muted hover:text-red-500 transition-colors"
                 >
                   <X size={16} />
                 </button>
               </div>
             ) : (
               <>
-                <Upload size={28} className="text-slate-500 mb-2" />
-                <p className="text-sm text-slate-400">Glissez un fichier ou <span className="text-blue-400">parcourez</span></p>
-                <p className="text-xs text-slate-600 mt-1">PDF, Word, Excel, Images, ZIP — max 10 MB</p>
+                <Upload size={28} className="text-nfs-primary/50 mb-2" />
+                <p className="text-sm text-nfs-muted">Glissez un fichier ou <span className="text-nfs-primary font-medium">parcourez</span></p>
+                <p className="text-xs text-nfs-muted/60 mt-1">PDF, Word, Excel, Images, ZIP — max 10 MB</p>
               </>
             )}
           </div>
-          {errors.file && <p className="text-xs text-red-400 mt-1.5">⚠ {errors.file}</p>}
+          {errors.file && <p className="text-xs text-red-500 mt-1.5">⚠ {errors.file}</p>}
         </div>
 
         <Input
@@ -159,10 +159,10 @@ export default function UploadPage() {
             type="button"
             onClick={() => { setProtected((p) => !p); setCode(''); }}
             className={[
-              'flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all w-full',
+              'flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all w-full',
               isProtected
-                ? 'bg-yellow-900/20 border-yellow-600/40 text-yellow-300'
-                : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500',
+                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                : 'bg-nfs-bg border-nfs-border text-nfs-muted hover:border-nfs-primary/50 hover:text-nfs-dark',
             ].join(' ')}
           >
             {isProtected ? <Lock size={15} /> : <Unlock size={15} />}

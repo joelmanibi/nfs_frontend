@@ -28,17 +28,17 @@ export default function Topbar() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="md:hidden bg-slate-900 border-b border-slate-800 px-4 py-3">
+    <header className="md:hidden px-4 py-3 shadow-sm" style={{background:'#005AA1'}}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600">
-            <ShieldCheck size={15} className="text-white" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/20">
+            <ShieldCheck size={16} className="text-white" />
           </div>
-          <span className="text-white font-bold text-base">NFS</span>
+          <span className="text-white font-bold text-base tracking-wide">NFS</span>
         </div>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="text-slate-400 hover:text-white transition-colors"
+          className="text-white/70 hover:text-white transition-colors"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -46,7 +46,7 @@ export default function Topbar() {
 
       {/* Mobile drawer */}
       {open && (
-        <nav className="mt-3 pb-2 space-y-0.5">
+        <nav className="mt-3 pb-2 space-y-1">
           {NAV.map(({ href, icon: Icon, label }) => {
             const active = pathname === href;
             return (
@@ -55,10 +55,10 @@ export default function Topbar() {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={[
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   active
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800',
+                    ? 'bg-white text-nfs-dark'
+                    : 'text-white/75 hover:text-white hover:bg-white/15',
                 ].join(' ')}
               >
                 <Icon size={16} />
@@ -68,7 +68,7 @@ export default function Topbar() {
           })}
           <button
             onClick={() => { setOpen(false); logout(); }}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition-all"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-all"
           >
             <LogOut size={16} />
             Déconnexion

@@ -25,17 +25,20 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="hidden md:flex flex-col w-60 shrink-0 bg-slate-900 border-r border-slate-800 min-h-screen">
+    <aside className="hidden md:flex flex-col w-64 shrink-0 min-h-screen" style={{background:'#005AA1'}}>
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-slate-800">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600">
-          <ShieldCheck size={18} className="text-white" />
+      <div className="flex items-center gap-3 px-5 py-5" style={{borderBottom:'1px solid rgba(255,255,255,0.15)'}}>
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm">
+          <ShieldCheck size={20} className="text-white" />
         </div>
-        <span className="text-white font-bold tracking-tight text-lg">NFS</span>
+        <div>
+          <span className="text-white font-bold tracking-wide text-lg leading-none">NFS</span>
+          <p className="text-white/60 text-xs leading-none mt-0.5">Transfert sécurisé</p>
+        </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-5 space-y-1">
         {NAV.map(({ href, icon: Icon, label }) => {
           const active = pathname === href;
           return (
@@ -43,10 +46,10 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={[
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800',
+                  ? 'bg-white text-nfs-dark shadow-md'
+                  : 'text-white/75 hover:text-white hover:bg-white/15',
               ].join(' ')}
             >
               <Icon size={17} />
@@ -57,19 +60,19 @@ export default function Sidebar() {
       </nav>
 
       {/* User + logout */}
-      <div className="px-3 py-4 border-t border-slate-800">
+      <div className="px-3 py-4" style={{borderTop:'1px solid rgba(255,255,255,0.15)'}}>
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-700 text-white text-xs font-bold shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-nfs-primary text-white text-xs font-bold shrink-0 shadow-md">
             {getInitials(`${user?.email || 'U'}`)}
           </div>
           <div className="overflow-hidden">
-            <p className="text-xs font-medium text-slate-200 truncate">{user?.email}</p>
-            <p className="text-xs text-slate-500 capitalize">{user?.role?.toLowerCase()}</p>
+            <p className="text-xs font-semibold text-white truncate">{user?.email}</p>
+            <p className="text-xs text-white/50 capitalize">{user?.role?.toLowerCase()}</p>
           </div>
         </div>
         <button
           onClick={logout}
-          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition-all"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-all"
         >
           <LogOut size={15} />
           Déconnexion

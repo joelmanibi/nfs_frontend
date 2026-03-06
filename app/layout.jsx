@@ -17,14 +17,15 @@ export default function RootLayout({ children }) {
             position="top-right"
             toastOptions={{
               style: {
-                background: '#1e293b',
-                color: '#e2e8f0',
-                border: '1px solid #334155',
+                background: '#ffffff',
+                color: '#0d2d4a',
+                border: '1px solid #c5dff0',
                 borderRadius: '10px',
                 fontSize: '14px',
+                boxShadow: '0 4px 20px rgba(0, 90, 161, 0.12)',
               },
-              success: { iconTheme: { primary: '#22c55e', secondary: '#1e293b' } },
-              error:   { iconTheme: { primary: '#ef4444', secondary: '#1e293b' } },
+              success: { iconTheme: { primary: '#00ABDF', secondary: '#ffffff' } },
+              error:   { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
             }}
           />
         </AuthProvider>

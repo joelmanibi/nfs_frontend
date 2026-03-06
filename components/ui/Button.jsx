@@ -2,13 +2,13 @@
 
 const variants = {
   primary:
-    'bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-900/40',
+    'bg-nfs-primary hover:bg-nfs-light text-white shadow-sm shadow-nfs-primary/30',
   secondary:
-    'bg-slate-700 hover:bg-slate-600 text-slate-100 border border-slate-600',
+    'bg-white hover:bg-nfs-50 text-nfs-dark border border-nfs-border',
   danger:
-    'bg-red-600 hover:bg-red-500 text-white shadow-sm shadow-red-900/40',
+    'bg-red-500 hover:bg-red-600 text-white shadow-sm shadow-red-500/30',
   ghost:
-    'bg-transparent hover:bg-slate-700/60 text-slate-300',
+    'bg-transparent hover:bg-nfs-50 text-nfs-dark',
 };
 
 const sizes = {
@@ -34,7 +34,7 @@ export default function Button({
       disabled={disabled || loading}
       className={[
         'inline-flex items-center justify-center gap-2 rounded-lg font-medium',
-        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900',
+        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-nfs-primary focus:ring-offset-2 focus:ring-offset-white',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],

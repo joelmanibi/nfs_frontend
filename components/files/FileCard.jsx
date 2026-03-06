@@ -18,19 +18,19 @@ import toast from 'react-hot-toast';
 function FileIcon({ filename }) {
   const ext = filename?.split('.').pop().toLowerCase();
   const colors = {
-    pdf: 'text-red-400 bg-red-900/30 border-red-700/30',
-    doc: 'text-blue-400 bg-blue-900/30 border-blue-700/30',
-    docx: 'text-blue-400 bg-blue-900/30 border-blue-700/30',
-    xls: 'text-green-400 bg-green-900/30 border-green-700/30',
-    xlsx: 'text-green-400 bg-green-900/30 border-green-700/30',
-    png: 'text-purple-400 bg-purple-900/30 border-purple-700/30',
-    jpg: 'text-purple-400 bg-purple-900/30 border-purple-700/30',
-    jpeg: 'text-purple-400 bg-purple-900/30 border-purple-700/30',
+    pdf:  'text-red-500 bg-red-50 border-red-200',
+    doc:  'text-nfs-primary bg-nfs-100 border-nfs-border',
+    docx: 'text-nfs-primary bg-nfs-100 border-nfs-border',
+    xls:  'text-green-600 bg-green-50 border-green-200',
+    xlsx: 'text-green-600 bg-green-50 border-green-200',
+    png:  'text-purple-500 bg-purple-50 border-purple-200',
+    jpg:  'text-purple-500 bg-purple-50 border-purple-200',
+    jpeg: 'text-purple-500 bg-purple-50 border-purple-200',
   };
-  const cls = colors[ext] || 'text-blue-400 bg-blue-900/30 border-blue-700/30';
+  const cls = colors[ext] || 'text-nfs-primary bg-nfs-100 border-nfs-border';
   return (
-    <div className={`flex items-center justify-center w-10 h-10 rounded-lg border shrink-0 ${cls}`}>
-      <FileText size={18} />
+    <div className={`flex items-center justify-center w-11 h-11 rounded-xl border shrink-0 ${cls}`}>
+      <FileText size={19} />
     </div>
   );
 }
@@ -95,12 +95,12 @@ export default function FileCard({ file, mode }) {
   const typeLabel = getFileTypeLabel(file.originalName);
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4 hover:border-slate-600 transition-all duration-200 flex flex-col gap-3">
+    <div className="bg-white border border-nfs-border rounded-2xl p-4 hover:shadow-md hover:border-nfs-primary/30 transition-all duration-200 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start gap-3">
         <FileIcon filename={file.originalName} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-100 truncate" title={file.originalName}>
+          <p className="text-sm font-semibold text-nfs-dark truncate" title={file.originalName}>
             {file.originalName}
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -113,7 +113,7 @@ export default function FileCard({ file, mode }) {
       </div>
 
       {/* Meta */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-500">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-nfs-muted">
         <span className="flex items-center gap-1.5">
           <HardDrive size={11} /> {formatFileSize(file.size)}
         </span>
@@ -134,14 +134,14 @@ export default function FileCard({ file, mode }) {
 
       {/* ── Protected code input panel ───────────────────────────── */}
       {showCode && (
-        <div className="rounded-lg border border-yellow-700/40 bg-yellow-900/10 p-3 space-y-2">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-yellow-300 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-amber-700 flex items-center gap-1.5">
               <ShieldAlert size={13} /> Code de protection requis
             </p>
             <button
               onClick={cancelCode}
-              className="text-slate-500 hover:text-slate-300 transition-colors"
+              className="text-nfs-muted hover:text-nfs-dark transition-colors"
               aria-label="Annuler"
             >
               <X size={14} />
@@ -156,16 +156,16 @@ export default function FileCard({ file, mode }) {
             onChange={(e) => { setCode(e.target.value); setCodeError(''); }}
             onKeyDown={(e) => e.key === 'Enter' && handleDownload()}
             className={[
-              'w-full rounded-lg px-3 py-2 text-sm bg-slate-800 text-slate-100 placeholder-slate-500',
-              'focus:outline-none focus:ring-2 transition-colors',
+              'w-full rounded-xl px-3 py-2 text-sm bg-white text-nfs-text placeholder-nfs-muted',
+              'focus:outline-none focus:ring-2 transition-colors border',
               codeError
-                ? 'border border-red-500 focus:ring-red-500'
-                : 'border border-slate-600 focus:ring-yellow-500',
+                ? 'border-red-400 focus:ring-red-400'
+                : 'border-amber-300 focus:ring-amber-400',
             ].join(' ')}
           />
 
           {codeError && (
-            <p className="text-xs text-red-400 flex items-center gap-1">⚠ {codeError}</p>
+            <p className="text-xs text-red-500 flex items-center gap-1">⚠ {codeError}</p>
           )}
         </div>
       )}

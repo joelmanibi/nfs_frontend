@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,15 +17,15 @@ html {
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #020617; /* slate-950 */
-  color: #e2e8f0;            /* slate-200 */
+  background-color: #f0f8ff;
+  color: #0d2d4a;
 }
 
 /* Thin custom scrollbar */
 ::-webkit-scrollbar         { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-thumb   { background: #00ABDF; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #005AA1; }
 
 /* OTP input centering fix */
 input[type='text']::-webkit-outer-spin-button,
