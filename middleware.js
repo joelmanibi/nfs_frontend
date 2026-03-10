@@ -7,12 +7,13 @@ export function middleware(request) {
 
   // Allow public routes and Next.js internals
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isStaticAsset = /\.[^/]+$/.test(pathname);
   const isNextInternal =
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/api');
 
-  if (isPublic || isNextInternal) return NextResponse.next();
+  if (isPublic || isStaticAsset || isNextInternal) return NextResponse.next();
 
   // Check for JWT cookie
   const token = request.cookies.get('nfs_token')?.value;
@@ -26,6 +27,6 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\..*).*)'],
 };
 

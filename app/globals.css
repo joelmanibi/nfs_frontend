@@ -21,6 +21,57 @@ body {
   color: #0d2d4a;
 }
 
+.auth-visual-panel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #051a2c;
+}
+
+.auth-visual-panel__media,
+.auth-visual-panel__slide,
+.auth-visual-panel__overlay,
+.auth-visual-panel__glow {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-visual-panel__slide {
+  inset: -6%;
+  opacity: 0;
+  transform: scale(1.04);
+  filter: saturate(1.1) contrast(1.04) brightness(0.96);
+  transition: opacity 1.4s ease, transform 6s ease;
+}
+
+.auth-visual-panel__slide--active {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.auth-visual-panel__slide--inactive {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+.auth-visual-panel__overlay {
+  background:
+    linear-gradient(155deg, rgba(2, 14, 25, 0.52) 0%, rgba(2, 44, 75, 0.34) 42%, rgba(0, 113, 150, 0.2) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 36%);
+}
+
+.auth-visual-panel__glow {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(0, 171, 223, 0.22), transparent 42%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-visual-panel__slide {
+    transition: none;
+  }
+}
+
 /* Thin custom scrollbar */
 ::-webkit-scrollbar         { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track   { background: transparent; }

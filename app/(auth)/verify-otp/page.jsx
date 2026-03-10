@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShieldCheck, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AuthVisualPanel from '@/components/auth/AuthVisualPanel';
 import Button from '@/components/ui/Button';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -89,31 +91,28 @@ function VerifyOTPForm() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left decorative panel */}
-      <div className="hidden lg:flex flex-col justify-between w-2/5 p-12" style={{background:'linear-gradient(145deg, #005AA1 0%, #00ABDF 100%)'}}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20">
-            <ShieldCheck size={22} className="text-white" />
-          </div>
-          <span className="text-white font-bold text-xl tracking-wide">NFS</span>
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-white leading-tight mb-4">
-            Vérification<br />en deux étapes
-          </h2>
-          <p className="text-white/70 text-sm leading-relaxed">
-            Un code à 6 chiffres a été envoyé à votre adresse email pour confirmer votre identité.
-          </p>
-        </div>
-        <p className="text-white/40 text-xs">© {new Date().getFullYear()} NFS — Tous droits réservés</p>
-      </div>
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      <AuthVisualPanel
+        title={<>Vérification<br />en deux étapes</>}
+        description="Un code à 6 chiffres a été envoyé à votre adresse email pour confirmer votre identité."
+        features={['Code temporaire', 'Session sécurisée', 'Accès protégé']}
+      />
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-nfs-bg">
-        <div className="w-full max-w-sm">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-nfs-bg">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.08]" aria-hidden="true">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={640}
+            height={640}
+            className="h-auto w-[320px] sm:w-[430px] lg:w-[640px]"
+          />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm">
           {/* Mobile logo */}
-          <div className="flex items-center gap-2.5 mb-8 lg:hidden">
+          <div className="hidden items-center gap-2.5 mb-8 lg:hidden">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-nfs-primary">
               <ShieldCheck size={18} className="text-white" />
             </div>
