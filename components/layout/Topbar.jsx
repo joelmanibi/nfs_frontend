@@ -12,6 +12,7 @@ import {
   Upload,
   LogOut,
   ShieldCheck,
+  Settings2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -66,6 +67,16 @@ export default function Topbar() {
               </Link>
             );
           })}
+          {user?.role === 'ADMIN' && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-300 hover:text-white hover:bg-red-500/20 transition-all"
+            >
+              <Settings2 size={16} />
+              Console Admin
+            </Link>
+          )}
           <button
             onClick={() => { setOpen(false); logout(); }}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-all"
