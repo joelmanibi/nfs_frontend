@@ -83,7 +83,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <AuthVisualPanel
-        title={<>IDS Secure Transport <br /> la solution de partage de fichiers sécurisé du Port Autonome d'Abidjan</>}
+        title={<>IDS Secure Transport <br /> la solution de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
         description="IDS Secure Transport est la plateforme officielle de transfert sécurisé du Port Autonome d'Abidjan. Accédez à vos documents en toute confiance, où que vous soyez."
         features={['Chiffrement AES-256 de bout en bout', 'Authentification OTP & mot de passe', 'Accès contrôlé et audité']}
       />

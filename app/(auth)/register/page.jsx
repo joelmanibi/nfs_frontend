@@ -314,7 +314,7 @@ function RegisterContent() {
     return (
       <div className="min-h-screen flex flex-col lg:flex-row">
         <AuthVisualPanel
-          title={<>Bienvenue sur IDS Secure Transport<br />la plateforme de partage de fichiers sécurisé du Port Autonome d'Abidjan</>}
+          title={<>Bienvenue sur IDS Secure Transport<br />la plateforme de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
           description="IDS Secure Transport est la solution officielle de transfert sécurisé de fichiers du Port Autonome d'Abidjan. Votre demande sera examinée par un administrateur."
           features={['Accès sur validation administrative', 'Transfert chiffré AES-256', 'Protection de vos données']}
         />
@@ -340,7 +340,7 @@ function RegisterContent() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <AuthVisualPanel
-        title={<>Rejoignez IDS Secure Transport<br />la plateforme de partage de fichiers sécurisé du Port Autonome d'Abidjan</>}
+        title={<>Rejoignez IDS Secure Transport<br />la plateforme de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
         description="IDS Secure Transport est la solution officielle de transfert sécurisé de fichiers du Port Autonome d'Abidjan. Votre demande d'accès sera examinée par un administrateur."
         features={['Accès sur validation administrative', 'Transfert chiffré AES-256', 'Protection de vos données']}
       />
@@ -355,7 +355,7 @@ function RegisterContent() {
           <div className="mb-6">
             <p className="text-xs font-semibold text-NFS-primary uppercase tracking-widest mb-1">Port Autonome d&apos;Abidjan</p>
             <h1 className="text-2xl font-bold text-NFS-dark">Demande d&apos;accès à IDS Secure Transport</h1>
-            <p className="text-sm text-NFS-muted mt-1">Plateforme de partage de fichiers sécurisé</p>
+            <p className="text-sm text-NFS-muted mt-1">Plateforme de partage de fichiers sécurisés</p>
           </div>
 
           <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
