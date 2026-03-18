@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ShieldCheck } from 'lucide-react';
+
 
 const BACKGROUNDS = ['/auth/port_img.jpg', '/auth/port_img1.jpg'];
 
@@ -39,10 +39,13 @@ export default function AuthVisualPanel({ title, description, features = [] }) {
       </div>
 
       <div className="relative z-10 flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/15">
-          <ShieldCheck size={22} className="text-white" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/15 overflow-hidden">
+          <Image src="/logo.png" alt="PAA Logo" width={36} height={36} className="object-contain" />
         </div>
-        <span className="text-white font-bold text-xl tracking-wide">NFS</span>
+        <div>
+          <span className="text-white font-bold text-base tracking-wide leading-none block">Port Autonome d&apos;Abidjan</span>
+          <span className="text-white/60 text-xs leading-none mt-0.5 block">IDS Secure Transport — Transfert sécurisé</span>
+        </div>
       </div>
 
       <div className="relative z-10 max-w-md">
@@ -62,7 +65,7 @@ export default function AuthVisualPanel({ title, description, features = [] }) {
       </div>
 
       <div className="relative z-10 flex items-center justify-between gap-4">
-        <p className="text-white/45 text-xs">© {new Date().getFullYear()} NFS — Tous droits réservés</p>
+        <p className="text-white/45 text-xs">© {new Date().getFullYear()} Port Autonome d&apos;Abidjan — Tous droits réservés</p>
         <div className="flex items-center gap-2" aria-hidden="true">
           {BACKGROUNDS.map((src, index) => (
             <span

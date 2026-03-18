@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Menu,
@@ -11,7 +12,6 @@ import {
   Send,
   Upload,
   LogOut,
-  ShieldCheck,
   Settings2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -32,10 +32,11 @@ export default function Topbar() {
     <header className="md:hidden px-4 py-3 shadow-sm" style={{background:'#005AA1'}}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/20">
-            <ShieldCheck size={16} className="text-white" />
+          <Image src="/logo.png" alt="PAA Logo" width={32} height={32} className="rounded-lg" />
+          <div>
+            <span className="text-white font-bold text-sm tracking-wide leading-none block">Port Autonome d&apos;Abidjan</span>
+            <span className="text-white/60 text-xs leading-none block">IDS Secure Transport</span>
           </div>
-          <span className="text-white font-bold text-base tracking-wide">NFS</span>
         </div>
         <button
           onClick={() => setOpen((o) => !o)}
@@ -58,7 +59,7 @@ export default function Topbar() {
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   active
-                    ? 'bg-white text-nfs-dark'
+                    ? 'bg-white text-NFS-dark'
                     : 'text-white/75 hover:text-white hover:bg-white/15',
                 ].join(' ')}
               >

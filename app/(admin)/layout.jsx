@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, ArrowLeftRight, FileText,
-  LogOut, ShieldCheck, ChevronRight,
+  LogOut, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -24,12 +24,10 @@ function AdminSidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 min-h-screen bg-slate-900">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-500/20">
-          <ShieldCheck size={20} className="text-red-400" />
-        </div>
+        <Image src="/logo.png" alt="PAA Logo" width={36} height={36} className="rounded-xl" />
         <div>
-          <span className="text-white font-bold tracking-wide text-lg leading-none">Admin</span>
-          <p className="text-white/50 text-xs leading-none mt-0.5">NFS — Panneau admin</p>
+          <span className="text-white font-bold tracking-wide text-sm leading-none">Port Autonome d&apos;Abidjan</span>
+          <p className="text-white/50 text-xs leading-none mt-0.5">IDS Secure Transport — Administration</p>
         </div>
       </div>
 

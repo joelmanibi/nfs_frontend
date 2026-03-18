@@ -8,9 +8,9 @@ import Pagination from '@/components/ui/Pagination';
 const DEFAULT_PAGE_SIZE = 6;
 
 /**
- * @param {{ files: object[], mode: 'inbox' | 'sent', loading: boolean }} props
+ * @param {{ files: object[], mode: 'inbox' | 'sent', loading: boolean, onUpdated?: (file: object) => void, onDeleted?: (id: string) => void }} props
  */
-export default function FileList({ files = [], mode, loading }) {
+export default function FileList({ files = [], mode, loading, onUpdated, onDeleted }) {
   const [page, setPage]         = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
@@ -25,7 +25,7 @@ export default function FileList({ files = [], mode, loading }) {
           {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
             <div
               key={i}
-              className="bg-nfs-100/60 border border-nfs-border rounded-2xl p-4 animate-pulse h-44"
+              className="bg-NFS-100/60 border border-NFS-border rounded-2xl p-4 animate-pulse h-44"
             />
           ))}
         </div>
@@ -40,9 +40,9 @@ export default function FileList({ files = [], mode, loading }) {
       ? 'Aucun fichier reçu pour le moment.'
       : 'Aucun fichier envoyé pour le moment.';
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-nfs-muted/50">
+      <div className="flex flex-col items-center justify-center py-20 text-NFS-muted/50">
         <Icon size={40} className="mb-3 opacity-30" />
-        <p className="text-sm text-nfs-muted">{label}</p>
+        <p className="text-sm text-NFS-muted">{label}</p>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function FileList({ files = [], mode, loading }) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {visibleFiles.map((file) => (
-          <FileCard key={file.id} file={file} mode={mode} />
+          <FileCard key={file.id} file={file} mode={mode} onUpdated={onUpdated} onDeleted={onDeleted} />
         ))}
       </div>
 

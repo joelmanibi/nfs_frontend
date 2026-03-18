@@ -99,7 +99,7 @@ function VerifyOTPForm() {
       />
 
       {/* Right form panel */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-nfs-bg">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-NFS-bg">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.08]" aria-hidden="true">
           <Image
             src="/logo.png"
@@ -113,20 +113,20 @@ function VerifyOTPForm() {
         <div className="relative z-10 w-full max-w-sm">
           {/* Mobile logo */}
           <div className="hidden items-center gap-2.5 mb-8 lg:hidden">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-nfs-primary">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-NFS-primary">
               <ShieldCheck size={18} className="text-white" />
             </div>
-            <span className="text-nfs-dark font-bold text-lg">NFS</span>
+            <span className="text-NFS-dark font-bold text-lg">IDS Secure Transport</span>
           </div>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-nfs-dark">Vérification OTP</h1>
-            <p className="text-sm text-nfs-muted mt-1">
-              Code envoyé à <span className="text-nfs-dark font-medium">{email || '…'}</span>
+            <h1 className="text-2xl font-bold text-NFS-dark">Vérification OTP</h1>
+            <p className="text-sm text-NFS-muted mt-1">
+              Code envoyé à <span className="text-NFS-dark font-medium">{email || '…'}</span>
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 space-y-6 shadow-lg shadow-nfs-dark/8 border border-nfs-border">
+          <div className="bg-white rounded-2xl p-6 space-y-6 shadow-lg shadow-NFS-dark/8 border border-NFS-border">
             {/* OTP inputs */}
             <div className="flex justify-center gap-2.5" onPaste={handlePaste}>
               {digits.map((d, i) => (
@@ -139,7 +139,7 @@ function VerifyOTPForm() {
                   value={d}
                   onChange={(e) => handleChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-11 h-13 text-center text-xl font-bold rounded-xl bg-nfs-bg border-2 border-nfs-border text-nfs-dark focus:outline-none focus:ring-2 focus:ring-nfs-primary focus:border-nfs-primary transition-all"
+                  className="w-11 h-13 text-center text-xl font-bold rounded-xl bg-NFS-bg border-2 border-NFS-border text-NFS-dark focus:outline-none focus:ring-2 focus:ring-NFS-primary focus:border-NFS-primary transition-all"
                 />
               ))}
             </div>
@@ -159,20 +159,20 @@ function VerifyOTPForm() {
               {canResend ? (
                 <button
                   onClick={handleResend}
-                  className="inline-flex items-center gap-1.5 text-sm text-nfs-primary hover:text-nfs-dark font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-NFS-primary hover:text-NFS-dark font-medium transition-colors"
                 >
                   <RotateCcw size={13} /> Renvoyer un code
                 </button>
               ) : (
-                <p className="text-xs text-nfs-muted">
-                  Renvoyer dans <span className="text-nfs-dark font-medium">{countdown}s</span>
+                <p className="text-xs text-NFS-muted">
+                  Renvoyer dans <span className="text-NFS-dark font-medium">{countdown}s</span>
                 </p>
               )}
             </div>
           </div>
 
-          <p className="text-center text-sm text-nfs-muted mt-5">
-            <Link href="/login" className="text-nfs-primary hover:text-nfs-dark font-medium transition-colors">
+          <p className="text-center text-sm text-NFS-muted mt-5">
+            <Link href="/login" className="text-NFS-primary hover:text-NFS-dark font-medium transition-colors">
               ← Changer d&apos;email
             </Link>
           </p>

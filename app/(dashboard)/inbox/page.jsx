@@ -33,13 +33,13 @@ export default function InboxPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-nfs-100 border border-nfs-border">
-            <Inbox size={18} className="text-nfs-primary" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-NFS-100 border border-NFS-border">
+            <Inbox size={18} className="text-NFS-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-nfs-dark">Boîte de réception</h1>
+            <h1 className="text-xl font-bold text-NFS-dark">Boîte de réception</h1>
             {!loading && (
-              <p className="text-xs text-nfs-muted">
+              <p className="text-xs text-NFS-muted">
                 {count} fichier{count > 1 ? 's' : ''} reçu{count > 1 ? 's' : ''}
               </p>
             )}

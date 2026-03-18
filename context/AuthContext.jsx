@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
-const COOKIE_TOKEN = 'nfs_token';
-const COOKIE_USER  = 'nfs_user';
+const COOKIE_TOKEN = 'NFS_token';
+const COOKIE_USER  = 'NFS_user';
 const COOKIE_OPTS  = { expires: 1 / 12, sameSite: 'Strict' }; // ~2 h
 
 const AuthContext = createContext(null);

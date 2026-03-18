@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
+import { ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AuthVisualPanel from '@/components/auth/AuthVisualPanel';
 import Button from '@/components/ui/Button';
@@ -24,8 +24,9 @@ export default function LoginPage() {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [notRegistered, setNotRegistered] = useState(false);
+  const [pending, setPending]       = useState(false);
 
-  const resetState = () => { setError(''); setNotRegistered(false); };
+  const resetState = () => { setError(''); setNotRegistered(false); setPending(false); };
 
   // ── OTP flow ──────────────────────────────────────────────────────────────
   const handleOTPSubmit = async (e) => {
@@ -39,6 +40,7 @@ export default function LoginPage() {
       toast.success('Un code OTP a été envoyé à votre adresse email.');
       router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     } catch (err) {
+      if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
@@ -63,6 +65,7 @@ export default function LoginPage() {
       toast.success('Authentification réussie !');
       login(data.token, data.user);
     } catch (err) {
+      if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
@@ -70,41 +73,42 @@ export default function LoginPage() {
   };
 
   const inputClass = (hasErr) => [
-    'w-full rounded-xl px-3.5 py-2.5 text-sm bg-white text-nfs-text placeholder-nfs-muted',
+    'w-full rounded-xl px-3.5 py-2.5 text-sm bg-white text-NFS-text placeholder-NFS-muted',
     'transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-0',
     hasErr
       ? 'border border-red-400 focus:ring-red-400'
-      : 'border border-nfs-border hover:border-nfs-primary/50 focus:ring-nfs-primary',
+      : 'border border-NFS-border hover:border-NFS-primary/50 focus:ring-NFS-primary',
   ].join(' ');
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <AuthVisualPanel
-        title={<>Transfert de fichiers<br />sécurisé et chiffré</>}
-        description="Envoyez et recevez vos fichiers en toute confiance grâce au chiffrement AES-256 de bout en bout."
-        features={['Chiffrement AES-256', 'Authentification OTP', 'Protection par code']}
+        title={<>IDS Secure Transport <br /> la solution de partage de fichiers sécurisé du Port Autonome d'Abidjan</>}
+        description="IDS Secure Transport est la plateforme officielle de transfert sécurisé du Port Autonome d'Abidjan. Accédez à vos documents en toute confiance, où que vous soyez."
+        features={['Chiffrement AES-256 de bout en bout', 'Authentification OTP & mot de passe', 'Accès contrôlé et audité']}
       />
 
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-nfs-bg">
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-NFS-bg">
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.08]" aria-hidden="true">
           <Image src="/logo.png" alt="" width={640} height={640} className="h-auto w-[320px] sm:w-[430px] lg:w-[640px]" />
         </div>
 
         <div className="relative z-10 w-full max-w-sm">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-nfs-dark">Connexion</h1>
-            <p className="text-sm text-nfs-muted mt-1">Choisissez votre méthode d&apos;authentification</p>
+            <p className="text-xs font-semibold text-NFS-primary uppercase tracking-widest mb-1">Port Autonome d&apos;Abidjan</p>
+            <h1 className="text-2xl font-bold text-NFS-dark">Connexion à IDS Secure Transport</h1>
+            <p className="text-sm text-NFS-muted mt-1">Choisissez votre méthode d&apos;authentification</p>
           </div>
 
           {/* ── Tabs ── */}
-          <div className="flex rounded-xl border border-nfs-border bg-white overflow-hidden mb-4 shadow-sm">
+          <div className="flex rounded-xl border border-NFS-border bg-white overflow-hidden mb-4 shadow-sm">
             <button
               type="button"
               onClick={() => { setTab('otp'); resetState(); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
                 tab === 'otp'
-                  ? 'bg-nfs-primary text-white'
-                  : 'text-nfs-muted hover:text-nfs-dark'
+                  ? 'bg-NFS-primary text-white'
+                  : 'text-NFS-muted hover:text-NFS-dark'
               }`}
             >
               <Mail size={15} /> Code OTP
@@ -114,8 +118,8 @@ export default function LoginPage() {
               onClick={() => { setTab('password'); resetState(); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
                 tab === 'password'
-                  ? 'bg-nfs-primary text-white'
-                  : 'text-nfs-muted hover:text-nfs-dark'
+                  ? 'bg-NFS-primary text-white'
+                  : 'text-NFS-muted hover:text-NFS-dark'
               }`}
             >
               <KeyRound size={15} /> Mot de passe
@@ -124,9 +128,9 @@ export default function LoginPage() {
 
           {/* ── OTP Form ── */}
           {tab === 'otp' && (
-            <form onSubmit={handleOTPSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-lg shadow-nfs-dark/8 border border-nfs-border">
+            <form onSubmit={handleOTPSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-lg shadow-NFS-dark/8 border border-NFS-border">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-nfs-dark">Adresse email</label>
+                <label className="text-sm font-medium text-NFS-dark">Adresse email</label>
                 <input
                   type="email"
                   placeholder="vous@exemple.com"
@@ -138,6 +142,18 @@ export default function LoginPage() {
                 />
                 {error && !notRegistered && <p className="text-xs text-red-500">⚠ {error}</p>}
               </div>
+
+              {pending && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5">
+                  <Clock size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Compte en attente de validation</p>
+                    <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
+                      Votre compte est en cours de validation par un administrateur. Vous recevrez un email dès que votre accès sera activé.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {notRegistered && (
                 <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
@@ -169,9 +185,9 @@ export default function LoginPage() {
 
           {/* ── Password Form ── */}
           {tab === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-lg shadow-nfs-dark/8 border border-nfs-border">
+            <form onSubmit={handlePasswordSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-lg shadow-NFS-dark/8 border border-NFS-border">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-nfs-dark">Adresse email</label>
+                <label className="text-sm font-medium text-NFS-dark">Adresse email</label>
                 <input
                   type="email"
                   placeholder="vous@exemple.com"
@@ -184,7 +200,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-nfs-dark">Mot de passe</label>
+                <label className="text-sm font-medium text-NFS-dark">Mot de passe</label>
                 <div className="relative">
                   <input
                     type={showPwd ? 'text' : 'password'}
@@ -197,7 +213,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPwd((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-nfs-muted hover:text-nfs-dark"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-NFS-muted hover:text-NFS-dark"
                     tabIndex={-1}
                   >
                     {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -208,10 +224,22 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <span />
-                <Link href="/forgot-password" className="text-xs text-nfs-primary hover:text-nfs-dark transition-colors">
+                <Link href="/forgot-password" className="text-xs text-NFS-primary hover:text-NFS-dark transition-colors">
                   Mot de passe oublié ?
                 </Link>
               </div>
+
+              {pending && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5">
+                  <Clock size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Compte en attente de validation</p>
+                    <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
+                      Votre compte est en cours de validation par un administrateur. Vous recevrez un email dès que votre accès sera activé.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {notRegistered && (
                 <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
@@ -228,10 +256,19 @@ export default function LoginPage() {
             </form>
           )}
 
-          <p className="text-center text-sm text-nfs-muted mt-5">
+          <p className="text-center text-sm text-NFS-muted mt-5">
             Pas encore de compte ?{' '}
-            <Link href="/register" className="text-nfs-primary hover:text-nfs-dark font-medium transition-colors">
+            <Link href="/register" className="text-NFS-primary hover:text-NFS-dark font-medium transition-colors">
               Créer un compte
+            </Link>
+          </p>
+          <p className="text-center text-xs text-NFS-muted mt-3">
+            <Link href="/faq" className="hover:text-NFS-primary transition-colors underline underline-offset-2">
+              Consulter la FAQ
+            </Link>
+            {' · '}
+            <Link href="/register" className="hover:text-NFS-primary transition-colors underline underline-offset-2">
+              Conditions d&apos;utilisation
             </Link>
           </p>
         </div>

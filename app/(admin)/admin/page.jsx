@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Vue d&apos;ensemble</h1>
-          <p className="text-slate-400 text-sm mt-1">Statistiques globales du système NFS</p>
+          <p className="text-slate-400 text-sm mt-1">Statistiques globales de la plateforme IDS Secure Transport</p>
         </div>
         <button
           onClick={fetchStats}

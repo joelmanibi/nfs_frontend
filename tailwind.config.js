@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        nfs: {
+        NFS: {
           dark:    '#005AA1', // Bleu foncé — sidebar, titres
           primary: '#00ABDF', // Bleu principal — boutons, liens actifs
           light:   '#00ABE1', // Bleu clair — hover, highlights

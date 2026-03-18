@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -8,7 +9,6 @@ import {
   Send,
   Upload,
   LogOut,
-  ShieldCheck,
   Settings2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -29,12 +29,10 @@ export default function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 shrink-0 min-h-screen" style={{background:'#005AA1'}}>
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5" style={{borderBottom:'1px solid rgba(255,255,255,0.15)'}}>
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm">
-          <ShieldCheck size={20} className="text-white" />
-        </div>
+        <Image src="/logo.png" alt="PAA Logo" width={36} height={36} className="rounded-xl" />
         <div>
-          <span className="text-white font-bold tracking-wide text-lg leading-none">NFS</span>
-          <p className="text-white/60 text-xs leading-none mt-0.5">Transfert sécurisé</p>
+          <span className="text-white font-bold tracking-wide text-sm leading-none">Port Autonome d&apos;Abidjan</span>
+          <p className="text-white/60 text-xs leading-none mt-0.5">IDS Secure Transport</p>
         </div>
       </div>
 
@@ -49,7 +47,7 @@ export default function Sidebar() {
               className={[
                 'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-white text-nfs-dark shadow-md'
+                  ? 'bg-white text-NFS-dark shadow-md'
                   : 'text-white/75 hover:text-white hover:bg-white/15',
               ].join(' ')}
             >
@@ -63,7 +61,7 @@ export default function Sidebar() {
       {/* User + logout */}
       <div className="px-3 py-4" style={{borderTop:'1px solid rgba(255,255,255,0.15)'}}>
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-nfs-primary text-white text-xs font-bold shrink-0 shadow-md">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-NFS-primary text-white text-xs font-bold shrink-0 shadow-md">
             {getInitials(`${user?.email || 'U'}`)}
           </div>
           <div className="overflow-hidden">

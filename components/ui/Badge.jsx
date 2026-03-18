@@ -1,7 +1,7 @@
 'use client';
 
 const colors = {
-  blue:   'bg-nfs-100 text-nfs-dark border border-nfs-border',
+  blue:   'bg-NFS-100 text-NFS-dark border border-NFS-border',
   green:  'bg-green-50 text-green-700 border border-green-200',
   red:    'bg-red-50 text-red-600 border border-red-200',
   yellow: 'bg-amber-50 text-amber-700 border border-amber-200',

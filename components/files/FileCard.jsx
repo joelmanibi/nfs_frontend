@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   FileText, Download, Lock, Calendar,
   HardDrive, Mail, X, ShieldAlert,
-  Link2, Copy, Check, Clock,
+  Link2, Copy, Check, Clock, ShieldOff, Shield, Trash2,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -27,22 +27,22 @@ const DURATION_OPTIONS = [
 const BASE_URL =
   (typeof window !== 'undefined' ? window.location.origin : '') ||
   process.env.NEXT_PUBLIC_FRONTEND_URL ||
-  'http://localhost:3000';
+  'http://10.112.30.143:3000';
 
 /** Icon tinted by file type */
 function FileIcon({ filename }) {
   const ext = filename?.split('.').pop().toLowerCase();
   const colors = {
     pdf:  'text-red-500 bg-red-50 border-red-200',
-    doc:  'text-nfs-primary bg-nfs-100 border-nfs-border',
-    docx: 'text-nfs-primary bg-nfs-100 border-nfs-border',
+    doc:  'text-NFS-primary bg-NFS-100 border-NFS-border',
+    docx: 'text-NFS-primary bg-NFS-100 border-NFS-border',
     xls:  'text-green-600 bg-green-50 border-green-200',
     xlsx: 'text-green-600 bg-green-50 border-green-200',
     png:  'text-purple-500 bg-purple-50 border-purple-200',
     jpg:  'text-purple-500 bg-purple-50 border-purple-200',
     jpeg: 'text-purple-500 bg-purple-50 border-purple-200',
   };
-  const cls = colors[ext] || 'text-nfs-primary bg-nfs-100 border-nfs-border';
+  const cls = colors[ext] || 'text-NFS-primary bg-NFS-100 border-NFS-border';
   return (
     <div className={`flex items-center justify-center w-11 h-11 rounded-xl border shrink-0 ${cls}`}>
       <FileText size={19} />
@@ -51,9 +51,9 @@ function FileIcon({ filename }) {
 }
 
 /**
- * @param {{ file: object, mode: 'inbox' | 'sent' }} props
+ * @param {{ file: object, mode: 'inbox' | 'sent', onUpdated?: (file: object) => void, onDeleted?: (id: string) => void }} props
  */
-export default function FileCard({ file, mode }) {
+export default function FileCard({ file, mode, onUpdated, onDeleted }) {
   const [showCode, setShowCode]       = useState(false);
   const [code, setCode]               = useState('');
   const [codeError, setCodeError]     = useState('');
@@ -66,6 +66,11 @@ export default function FileCard({ file, mode }) {
   const [shareLoading, setShareLoad]  = useState(false);
   const [generatedLink, setGenLink]   = useState(null);  // { url, expiresAt }
   const [copied, setCopied]           = useState(false);
+
+  // ── Sender actions state ──────────────────────────────────────────────────
+  const [blocking, setBlocking]       = useState(false);
+  const [deleting, setDeleting]       = useState(false);
+  const [confirmDelete, setConfirmDel]= useState(false);
 
   const openCodeInput = () => {
     setShowCode(true);
@@ -86,6 +91,33 @@ export default function FileCard({ file, mode }) {
     setCopied(false);
   };
   const closeShare = () => { setShowShare(false); setGenLink(null); };
+
+  const handleBlock = async () => {
+    setBlocking(true);
+    try {
+      const { data } = await filesAPI.blockFile(file.id);
+      onUpdated?.({ ...file, isBlocked: data.isBlocked });
+      toast.success(data.isBlocked ? 'Fichier bloqué — le destinataire ne peut plus le télécharger.' : 'Fichier débloqué.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setBlocking(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDel(true); return; }
+    setDeleting(true);
+    try {
+      await filesAPI.deleteFile(file.id);
+      onDeleted?.(file.id);
+      toast.success('Fichier supprimé définitivement.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+      setDeleting(false);
+      setConfirmDel(false);
+    }
+  };
 
   const handleGenerateLink = async () => {
     setShareLoad(true);
@@ -145,12 +177,12 @@ export default function FileCard({ file, mode }) {
   const typeLabel = getFileTypeLabel(file.originalName);
 
   return (
-    <div className="bg-white border border-nfs-border rounded-2xl p-4 hover:shadow-md hover:border-nfs-primary/30 transition-all duration-200 flex flex-col gap-3">
+    <div className="bg-white border border-NFS-border rounded-2xl p-4 hover:shadow-md hover:border-NFS-primary/30 transition-all duration-200 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start gap-3">
         <FileIcon filename={file.originalName} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-nfs-dark truncate" title={file.originalName}>
+          <p className="text-sm font-semibold text-NFS-dark truncate" title={file.originalName}>
             {file.originalName}
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -158,12 +190,15 @@ export default function FileCard({ file, mode }) {
             {file.isProtected && (
               <Badge color="yellow" dot><Lock size={10} /> Protégé</Badge>
             )}
+            {file.isBlocked && (
+              <Badge color="red" dot><ShieldOff size={10} /> Bloqué</Badge>
+            )}
           </div>
         </div>
       </div>
 
       {/* Meta */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-nfs-muted">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-NFS-muted">
         <span className="flex items-center gap-1.5">
           <HardDrive size={11} /> {formatFileSize(file.size)}
         </span>
@@ -191,7 +226,7 @@ export default function FileCard({ file, mode }) {
             </p>
             <button
               onClick={cancelCode}
-              className="text-nfs-muted hover:text-nfs-dark transition-colors"
+              className="text-NFS-muted hover:text-NFS-dark transition-colors"
               aria-label="Annuler"
             >
               <X size={14} />
@@ -206,7 +241,7 @@ export default function FileCard({ file, mode }) {
             onChange={(e) => { setCode(e.target.value); setCodeError(''); }}
             onKeyDown={(e) => e.key === 'Enter' && handleDownload()}
             className={[
-              'w-full rounded-xl px-3 py-2 text-sm bg-white text-nfs-text placeholder-nfs-muted',
+              'w-full rounded-xl px-3 py-2 text-sm bg-white text-NFS-text placeholder-NFS-muted',
               'focus:outline-none focus:ring-2 transition-colors border',
               codeError
                 ? 'border-red-400 focus:ring-red-400'
@@ -222,12 +257,12 @@ export default function FileCard({ file, mode }) {
 
       {/* ── Share link panel — sent only ─────────────────────────────── */}
       {mode === 'sent' && showShare && (
-        <div className="rounded-xl border border-nfs-border bg-nfs-bg p-3 space-y-3">
+        <div className="rounded-xl border border-NFS-border bg-NFS-bg p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-nfs-dark flex items-center gap-1.5">
+            <p className="text-xs font-medium text-NFS-dark flex items-center gap-1.5">
               <Link2 size={13} /> Générer un lien public
             </p>
-            <button onClick={closeShare} className="text-nfs-muted hover:text-nfs-dark transition-colors">
+            <button onClick={closeShare} className="text-NFS-muted hover:text-NFS-dark transition-colors">
               <X size={14} />
             </button>
           </div>
@@ -243,8 +278,8 @@ export default function FileCard({ file, mode }) {
                     className={[
                       'px-2 py-1.5 rounded-lg text-xs font-medium border transition-all',
                       selectedHours === opt.hours
-                        ? 'bg-nfs-primary text-white border-nfs-primary'
-                        : 'bg-white text-nfs-muted border-nfs-border hover:border-nfs-primary/50',
+                        ? 'bg-NFS-primary text-white border-NFS-primary'
+                        : 'bg-white text-NFS-muted border-NFS-border hover:border-NFS-primary/50',
                     ].join(' ')}
                   >
                     {opt.label}
@@ -257,7 +292,7 @@ export default function FileCard({ file, mode }) {
             </>
           ) : (
             <>
-              <div className="flex items-center gap-2 text-xs text-nfs-muted">
+              <div className="flex items-center gap-2 text-xs text-NFS-muted">
                 <Clock size={11} />
                 Expire le {formatDate(generatedLink.expiresAt)}
               </div>
@@ -265,18 +300,18 @@ export default function FileCard({ file, mode }) {
                 <input
                   readOnly
                   value={generatedLink.url}
-                  className="flex-1 rounded-lg px-2.5 py-1.5 text-xs bg-white border border-nfs-border text-nfs-text truncate focus:outline-none"
+                  className="flex-1 rounded-lg px-2.5 py-1.5 text-xs bg-white border border-NFS-border text-NFS-text truncate focus:outline-none"
                 />
                 <button
                   onClick={copyLink}
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-nfs-primary text-white text-xs font-medium hover:bg-nfs-primary/90 transition-colors"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-NFS-primary text-white text-xs font-medium hover:bg-NFS-primary/90 transition-colors"
                 >
                   {copied ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
                 </button>
               </div>
               <button
                 onClick={() => setGenLink(null)}
-                className="text-xs text-nfs-muted hover:text-nfs-dark underline transition-colors"
+                className="text-xs text-NFS-muted hover:text-NFS-dark underline transition-colors"
               >
                 Changer la durée
               </button>
@@ -302,10 +337,63 @@ export default function FileCard({ file, mode }) {
 
       {/* Actions — sent only */}
       {mode === 'sent' && !showShare && (
-        <div className="mt-auto">
+        <div className="mt-auto space-y-2">
+          {/* Lien de partage */}
           <Button variant="secondary" size="sm" onClick={openShare} className="w-full">
             <Link2 size={13} /> Générer un lien de partage
           </Button>
+
+          {/* Bloquer / Débloquer */}
+          <button
+            type="button"
+            onClick={handleBlock}
+            disabled={blocking}
+            className={[
+              'w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all disabled:opacity-50',
+              file.isBlocked
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+            ].join(' ')}
+          >
+            {blocking
+              ? <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
+              : file.isBlocked
+                ? <><Shield size={13} /> Débloquer le fichier</>
+                : <><ShieldOff size={13} /> Bloquer le fichier</>
+            }
+          </button>
+
+          {/* Supprimer */}
+          {!confirmDelete ? (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-red-500 border-red-200 hover:bg-red-50 transition-all"
+            >
+              <Trash2 size={13} /> Supprimer le fichier
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-all disabled:opacity-50"
+              >
+                {deleting
+                  ? <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                  : <><Trash2 size={12} /> Confirmer</>
+                }
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDel(false)}
+                className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-NFS-border text-NFS-muted hover:text-NFS-dark transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

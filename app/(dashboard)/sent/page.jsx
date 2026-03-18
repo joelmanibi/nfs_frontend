@@ -28,6 +28,15 @@ export default function SentPage() {
 
   useEffect(() => { fetch(); }, [fetch]);
 
+  const handleUpdated = (updatedFile) => {
+    setFiles((prev) => prev.map((f) => f.id === updatedFile.id ? updatedFile : f));
+  };
+
+  const handleDeleted = (deletedId) => {
+    setFiles((prev) => prev.filter((f) => f.id !== deletedId));
+    setCount((prev) => Math.max(0, prev - 1));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -37,9 +46,9 @@ export default function SentPage() {
             <Send size={18} className="text-green-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-nfs-dark">Fichiers envoyés</h1>
+            <h1 className="text-xl font-bold text-NFS-dark">Fichiers envoyés</h1>
             {!loading && (
-              <p className="text-xs text-nfs-muted">
+              <p className="text-xs text-NFS-muted">
                 {count} fichier{count > 1 ? 's' : ''} envoyé{count > 1 ? 's' : ''}
               </p>
             )}
@@ -50,7 +59,7 @@ export default function SentPage() {
         </Button>
       </div>
 
-      <FileList files={files} mode="sent" loading={loading} />
+      <FileList files={files} mode="sent" loading={loading} onUpdated={handleUpdated} onDeleted={handleDeleted} />
     </div>
   );
 }
