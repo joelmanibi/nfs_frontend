@@ -5,6 +5,10 @@ import { AuthProvider } from '@/context/AuthContext';
 export const metadata = {
   title: 'IDS Secure Transport — Partage de fichiers sécurisés | Port Autonome d\'Abidjan',
   description: 'Plateforme de transfert de fichiers chiffrés AES-256',
+  icons: {
+    icon: '/logo_ids.png',
+    apple: '/logo_ids.png',
+  },
 };
 
 export default function RootLayout({ children }) {

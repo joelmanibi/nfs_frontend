@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail, Clock } from 'lucide-react';
+import { ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail, Clock, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AuthVisualPanel from '@/components/auth/AuthVisualPanel';
 import Button from '@/components/ui/Button';
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  // Tabs: 'otp' | 'password'
+  // Tabs: 'otp' | 'password' | 'ldap'
   const [tab, setTab]               = useState('otp');
   const [email, setEmail]           = useState('');
   const [password, setPassword]     = useState('');
@@ -25,6 +25,11 @@ export default function LoginPage() {
   const [error, setError]           = useState('');
   const [notRegistered, setNotRegistered] = useState(false);
   const [pending, setPending]       = useState(false);
+
+  // ── LDAP state ────────────────────────────────────────────────────────────
+  const [ldapUsername, setLdapUsername] = useState('');
+  const [ldapPassword, setLdapPassword] = useState('');
+  const [showLdapPwd, setShowLdapPwd]   = useState(false);
 
   const resetState = () => { setError(''); setNotRegistered(false); setPending(false); };
 
@@ -39,6 +44,25 @@ export default function LoginPage() {
       if (data.registered === false) { setNotRegistered(true); return; }
       toast.success('Un code OTP a été envoyé à votre adresse email.');
       router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    } catch (err) {
+      if (err?.response?.data?.pending) { setPending(true); return; }
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── LDAP flow ─────────────────────────────────────────────────────────────
+  const handleLDAPSubmit = async (e) => {
+    e.preventDefault();
+    resetState();
+    if (!ldapUsername.trim()) { setError('Veuillez entrer votre identifiant PAA.'); return; }
+    if (!ldapPassword.trim()) { setError('Veuillez entrer votre mot de passe Windows.'); return; }
+    setLoading(true);
+    try {
+      const { data } = await authAPI.loginWithLDAP(ldapUsername.trim(), ldapPassword);
+      toast.success('Authentification PAA réussie !');
+      login(data.token, data.user);
     } catch (err) {
       if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
@@ -123,6 +147,17 @@ export default function LoginPage() {
               }`}
             >
               <KeyRound size={15} /> Mot de passe
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab('ldap'); resetState(); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                tab === 'ldap'
+                  ? 'bg-NFS-primary text-white'
+                  : 'text-NFS-muted hover:text-NFS-dark'
+              }`}
+            >
+              <Building2 size={15} /> LDAP
             </button>
           </div>
 
@@ -247,6 +282,65 @@ export default function LoginPage() {
                     <UserX size={16} className="text-amber-500 mt-0.5 shrink-0" />
                     <p className="text-sm font-medium text-amber-700">Aucun compte associé à cet email.</p>
                   </div>
+                </div>
+              )}
+
+              <Button type="submit" loading={loading} className="w-full" size="lg">
+                Se connecter <ArrowRight size={16} />
+              </Button>
+            </form>
+          )}
+
+          {/* ── LDAP / AD Form ── */}
+          {tab === 'ldap' && (
+            <form onSubmit={handleLDAPSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-lg shadow-NFS-dark/8 border border-NFS-border">
+              <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+                <Building2 size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Réservé aux agents du <span className="font-semibold">Port Autonome d&apos;Abidjan</span>. Utilisez vos identifiants Windows (Active Directory).
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-NFS-dark">Identifiant Windows</label>
+                <input
+                  type="text"
+                  placeholder="ex : jdupont"
+                  value={ldapUsername}
+                  onChange={(e) => { setLdapUsername(e.target.value); resetState(); }}
+                  autoFocus
+                  autoComplete="username"
+                  className={inputClass(!!error)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-NFS-dark">Mot de passe Windows</label>
+                <div className="relative">
+                  <input
+                    type={showLdapPwd ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={ldapPassword}
+                    onChange={(e) => { setLdapPassword(e.target.value); resetState(); }}
+                    autoComplete="current-password"
+                    className={inputClass(!!error) + ' pr-10'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLdapPwd((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-NFS-muted hover:text-NFS-dark"
+                    tabIndex={-1}
+                  >
+                    {showLdapPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {error && <p className="text-xs text-red-500">⚠ {error}</p>}
+              </div>
+
+              {pending && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5">
+                  <Clock size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-blue-700">Votre compte est en attente de validation par un administrateur.</p>
                 </div>
               )}
 

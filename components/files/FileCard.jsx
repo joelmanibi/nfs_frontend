@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   FileText, Download, Lock, Calendar,
   HardDrive, Mail, X, ShieldAlert,
-  Link2, Copy, Check, Clock, ShieldOff, Shield, Trash2,
+  Link2, Copy, Check, Clock, ShieldOff, Shield, Trash2, Hash,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -205,6 +205,11 @@ export default function FileCard({ file, mode, onUpdated, onDeleted }) {
         <span className="flex items-center gap-1.5">
           <Calendar size={11} /> {formatDate(file.createdAt)}
         </span>
+        {file.reference && (
+          <span className="flex items-center gap-1.5 col-span-2 font-mono tracking-wide text-NFS-primary/80 select-all">
+            <Hash size={11} /> {file.reference}
+          </span>
+        )}
         {mode === 'sent' && file.receiverEmail && (
           <span className="flex items-center gap-1.5 col-span-2 truncate">
             <Mail size={11} /> {file.receiverEmail}
