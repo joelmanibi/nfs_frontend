@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail, Clock, Building2 } from 'lucide-react';
+import { ArrowRight, UserX, Eye, EyeOff, KeyRound, Mail, Clock, Building2, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AuthVisualPanel from '@/components/auth/AuthVisualPanel';
 import Button from '@/components/ui/Button';
@@ -31,6 +31,26 @@ export default function LoginPage() {
   const [ldapPassword, setLdapPassword] = useState('');
   const [showLdapPwd, setShowLdapPwd]   = useState(false);
 
+  // ── Rate-limit lockout countdown ──────────────────────────────────────────
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const t = setTimeout(() => setLockoutSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [lockoutSeconds]);
+
+  const formatCountdown = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  const handleRateLimit = (err) => {
+    const retryAfter = err?.response?.data?.retryAfter;
+    setLockoutSeconds(retryAfter && retryAfter > 0 ? retryAfter : 300);
+  };
+
   const resetState = () => { setError(''); setNotRegistered(false); setPending(false); };
 
   // ── OTP flow ──────────────────────────────────────────────────────────────
@@ -45,6 +65,7 @@ export default function LoginPage() {
       toast.success('Un code OTP a été envoyé à votre adresse email.');
       router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     } catch (err) {
+      if (err?.response?.status === 429) { handleRateLimit(err); return; }
       if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
     } finally {
@@ -64,6 +85,7 @@ export default function LoginPage() {
       toast.success('Authentification PAA réussie !');
       login(data.token, data.user);
     } catch (err) {
+      if (err?.response?.status === 429) { handleRateLimit(err); return; }
       if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
     } finally {
@@ -89,6 +111,7 @@ export default function LoginPage() {
       toast.success('Authentification réussie !');
       login(data.token, data.user);
     } catch (err) {
+      if (err?.response?.status === 429) { handleRateLimit(err); return; }
       if (err?.response?.data?.pending) { setPending(true); return; }
       setError(getErrorMessage(err));
     } finally {
@@ -123,6 +146,20 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-NFS-dark">Connexion à IDS Secure Transport</h1>
             <p className="text-sm text-NFS-muted mt-1">Choisissez votre méthode d&apos;authentification</p>
           </div>
+
+          {/* ── Lockout countdown banner ── */}
+          {lockoutSeconds > 0 && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 mb-4">
+              <ShieldAlert size={18} className="text-red-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Accès temporairement bloqué</p>
+                <p className="text-xs text-red-600 mt-0.5 leading-relaxed">
+                  Trop de tentatives échouées. Réessayez dans{' '}
+                  <span className="font-bold tabular-nums">{formatCountdown(lockoutSeconds)}</span>.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* ── Tabs ── */}
           <div className="flex rounded-xl border border-NFS-border bg-white overflow-hidden mb-4 shadow-sm">
@@ -211,7 +248,7 @@ export default function LoginPage() {
               )}
 
               {!notRegistered && (
-                <Button type="submit" loading={loading} className="w-full" size="lg">
+                <Button type="submit" loading={loading} disabled={lockoutSeconds > 0} className="w-full" size="lg">
                   Envoyer le code OTP <ArrowRight size={16} />
                 </Button>
               )}
@@ -285,7 +322,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" loading={loading} className="w-full" size="lg">
+              <Button type="submit" loading={loading} disabled={lockoutSeconds > 0} className="w-full" size="lg">
                 Se connecter <ArrowRight size={16} />
               </Button>
             </form>
@@ -344,7 +381,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" loading={loading} className="w-full" size="lg">
+              <Button type="submit" loading={loading} disabled={lockoutSeconds > 0} className="w-full" size="lg">
                 Se connecter <ArrowRight size={16} />
               </Button>
             </form>

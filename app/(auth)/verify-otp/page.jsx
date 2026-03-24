@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, RotateCcw } from 'lucide-react';
+import { ShieldCheck, RotateCcw, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AuthVisualPanel from '@/components/auth/AuthVisualPanel';
 import Button from '@/components/ui/Button';
@@ -25,6 +25,7 @@ function VerifyOTPForm() {
   const [attemptsLeft, setAttemptsLeft] = useState(null);
   const [countdown, setCountdown]   = useState(RESEND_DELAY);
   const [canResend, setCanResend]   = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const inputsRef = useRef([]);
 
   // Countdown for resend
@@ -33,6 +34,19 @@ function VerifyOTPForm() {
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [countdown]);
+
+  // Countdown for rate-limit lockout
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const t = setTimeout(() => setLockoutSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [lockoutSeconds]);
+
+  const formatCountdown = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
 
   const focusNext = (idx) => inputsRef.current[idx + 1]?.focus();
   const focusPrev = (idx) => inputsRef.current[idx - 1]?.focus();
@@ -67,6 +81,12 @@ function VerifyOTPForm() {
       toast.success('Authentification réussie !');
       login(data.token, data.user);
     } catch (err) {
+      if (err?.response?.status === 429) {
+        const retryAfter = err?.response?.data?.retryAfter;
+        setLockoutSeconds(retryAfter && retryAfter > 0 ? retryAfter : 300);
+        setDigits(Array(OTP_LENGTH).fill(''));
+        return;
+      }
       const left = err?.response?.data?.attemptsLeft;
       if (left !== undefined) setAttemptsLeft(left);
       toast.error(getErrorMessage(err));
@@ -126,6 +146,20 @@ function VerifyOTPForm() {
             </p>
           </div>
 
+          {/* ── Lockout countdown banner ── */}
+          {lockoutSeconds > 0 && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 mb-4">
+              <ShieldAlert size={18} className="text-red-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Accès temporairement bloqué</p>
+                <p className="text-xs text-red-600 mt-0.5 leading-relaxed">
+                  Trop de tentatives échouées. Réessayez dans{' '}
+                  <span className="font-bold tabular-nums">{formatCountdown(lockoutSeconds)}</span>.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl p-6 space-y-6 shadow-lg shadow-NFS-dark/8 border border-NFS-border">
             {/* OTP inputs */}
             <div className="flex justify-center gap-2.5" onPaste={handlePaste}>
@@ -150,7 +184,7 @@ function VerifyOTPForm() {
               </p>
             )}
 
-            <Button onClick={handleVerify} loading={loading} className="w-full" size="lg">
+            <Button onClick={handleVerify} loading={loading} disabled={lockoutSeconds > 0} className="w-full" size="lg">
               Valider le code
             </Button>
 
