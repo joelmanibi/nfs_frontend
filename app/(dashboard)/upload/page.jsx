@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import JSZip from 'jszip';
 import {
@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { filesAPI } from '@/lib/api';
+import { filesAPI, usersAPI } from '@/lib/api';
 import { formatFileSize, getErrorMessage } from '@/lib/utils';
 
 const LINK_DURATIONS = [
@@ -73,6 +73,55 @@ export default function UploadPage() {
   // ── Progression multi-étapes ──
   const [progress, setProgress] = useState({ active: false, percent: 0, label: '' });
   const backendTimerRef = useRef(null);
+  // ── Autocomplete destinataires ──
+  const [suggestions, setSuggestions]   = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingSugg, setLoadingSugg]   = useState(false);
+  const searchTimerRef = useRef(null);
+  const dropdownRef    = useRef(null);
+
+  /* ── Fermer le dropdown au clic extérieur ── */
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  /* ── Recherche de suggestions (DB + AD) avec debounce ── */
+  const searchSuggestions = useCallback(async (value) => {
+    if (value.trim().length < 2) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    setLoadingSugg(true);
+    try {
+      const { data } = await usersAPI.search(value.trim());
+      const filtered = (data.users || []).filter((u) => !recipients.includes(u.email));
+      setSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowDropdown(false);
+    } finally {
+      setLoadingSugg(false);
+    }
+  }, [recipients]);
+
+  /* ── Sélection d'une suggestion ── */
+  const selectSuggestion = (user) => {
+    if (!recipients.includes(user.email)) {
+      setRecipients((prev) => [...prev, user.email]);
+    }
+    setEmailDraft('');
+    setSuggestions([]);
+    setShowDropdown(false);
+    setErrors((e) => ({ ...e, recipients: undefined }));
+  };
 
   /* ── Gestion des tags email ── */
   const addEmailFromDraft = useCallback(() => {
@@ -94,9 +143,20 @@ export default function UploadPage() {
   const removeRecipient = (email) =>
     setRecipients((prev) => prev.filter((e) => e !== email));
 
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setEmailDraft(val);
+    setErrors((er) => ({ ...er, recipients: undefined }));
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => searchSuggestions(val), 300);
+  };
+
   const handleEmailKeyDown = (ev) => {
-    if (ev.key === 'Enter' || ev.key === ',') {
+    if (ev.key === 'Escape') {
+      setShowDropdown(false);
+    } else if (ev.key === 'Enter' || ev.key === ',') {
       ev.preventDefault();
+      setShowDropdown(false);
       addEmailFromDraft();
     } else if (ev.key === 'Backspace' && !emailDraft && recipients.length) {
       setRecipients((prev) => prev.slice(0, -1));
@@ -348,29 +408,65 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Champ de saisie + bouton Ajouter */}
-          <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="destinataire@exemple.com"
-              value={emailDraft}
-              onChange={(e) => { setEmailDraft(e.target.value); setErrors((er) => ({ ...er, recipients: undefined })); }}
-              onKeyDown={handleEmailKeyDown}
-              onBlur={addEmailFromDraft}
-              className={[
-                'flex-1 rounded-xl px-3 py-2 text-sm bg-white border focus:outline-none focus:ring-2 transition-colors',
-                errors.recipients
-                  ? 'border-red-400 focus:ring-red-300'
-                  : 'border-NFS-border focus:ring-NFS-primary/30',
-              ].join(' ')}
-            />
-            <button type="button" onClick={addEmailFromDraft}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-NFS-100 border border-NFS-border text-xs font-medium text-NFS-dark hover:border-NFS-primary/50 transition-colors shrink-0">
-              <UserPlus size={13} /> Ajouter
-            </button>
+          {/* Champ de saisie + bouton Ajouter + dropdown autocomplete */}
+          <div className="relative" ref={dropdownRef}>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nom, prénom ou email…"
+                value={emailDraft}
+                onChange={handleEmailChange}
+                onKeyDown={handleEmailKeyDown}
+                onBlur={addEmailFromDraft}
+                autoComplete="off"
+                className={[
+                  'flex-1 rounded-xl px-3 py-2 text-sm bg-white border focus:outline-none focus:ring-2 transition-colors',
+                  errors.recipients
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-NFS-border focus:ring-NFS-primary/30',
+                ].join(' ')}
+              />
+              <button type="button" onClick={() => { setShowDropdown(false); addEmailFromDraft(); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-NFS-100 border border-NFS-border text-xs font-medium text-NFS-dark hover:border-NFS-primary/50 transition-colors shrink-0">
+                <UserPlus size={13} /> Ajouter
+              </button>
+            </div>
+
+            {/* Dropdown suggestions */}
+            {(showDropdown || loadingSugg) && (
+              <div className="absolute top-full left-0 right-10 mt-1 bg-white border border-NFS-border rounded-xl shadow-lg z-50 overflow-hidden">
+                {loadingSugg ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 text-xs text-NFS-muted">
+                    <Loader2 size={12} className="animate-spin" /> Recherche en cours…
+                  </div>
+                ) : (
+                  suggestions.map((user) => (
+                    <button
+                      key={user.email}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(user); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-NFS-100 transition-colors text-left border-b border-NFS-border/40 last:border-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-NFS-dark truncate">{user.label}</p>
+                        <p className="text-xs text-NFS-muted truncate">{user.email}</p>
+                      </div>
+                      <span className={[
+                        'shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-medium border',
+                        user.isInternalUser
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-blue-50 text-blue-700 border-blue-200',
+                      ].join(' ')}>
+                        {user.source === 'ldap' ? '🏢 AD' : user.isInternalUser ? 'Interne' : 'Externe'}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
           <p className="text-xs text-NFS-muted/70 mt-1">
-            Appuyez sur <kbd className="px-1 py-0.5 rounded bg-NFS-bg border border-NFS-border text-[10px]">Entrée</kbd> ou <kbd className="px-1 py-0.5 rounded bg-NFS-bg border border-NFS-border text-[10px]">,</kbd> pour ajouter plusieurs destinataires.
+            Tapez un nom ou un email — sélectionnez dans la liste ou appuyez sur <kbd className="px-1 py-0.5 rounded bg-NFS-bg border border-NFS-border text-[10px]">Entrée</kbd>.
           </p>
           {errors.recipients && <p className="text-xs text-red-500 mt-1">⚠ {errors.recipients}</p>}
         </div>
