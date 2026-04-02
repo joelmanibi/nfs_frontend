@@ -27,7 +27,7 @@ function AdminSidebar() {
         <Image src="/logo.png" alt="PAA Logo" width={36} height={36} className="rounded-xl" />
         <div>
           <span className="text-white font-bold tracking-wide text-sm leading-none">Port Autonome d&apos;Abidjan</span>
-          <p className="text-white/50 text-xs leading-none mt-0.5">IDS Secure Transport — Administration</p>
+          <p className="text-white/50 text-xs leading-none mt-0.5">PAA Secure Transport — Administration</p>
         </div>
       </div>
 
