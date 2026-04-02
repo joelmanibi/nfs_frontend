@@ -66,6 +66,17 @@ export default function AuthVisualPanel({ title, description, features = [] }) {
 
       <div className="relative z-10 flex items-center justify-between gap-4">
         <p className="text-white/45 text-xs">© {new Date().getFullYear()} Port Autonome d&apos;Abidjan — Tous droits réservés</p>
+
+        {/* Certifications — bas droite */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-14 px-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 overflow-hidden">
+            <Image src="/afaq.png" alt="Certification AFAQ" width={90} height={52} className="object-contain h-11 w-auto" />
+          </div>
+          <div className="flex items-center justify-center h-14 px-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 overflow-hidden">
+            <Image src="/iso_27001.png" alt="ISO 27001" width={90} height={52} className="object-contain h-11 w-auto" />
+          </div>
+        </div>
+
         <div className="flex items-center gap-2" aria-hidden="true">
           {BACKGROUNDS.map((src, index) => (
             <span

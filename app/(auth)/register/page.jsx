@@ -12,8 +12,10 @@ import { authAPI } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 
 // ── Password strength ─────────────────────────────────────────────────────────
+const PWD_MIN = 8;
+const PWD_MAX = 12;
 const evaluatePassword = (pwd) => {
-  if (!pwd || pwd.length < 8) return 0;
+  if (!pwd || pwd.length < PWD_MIN) return 0;
   let score = 0;
   if (/[A-Z]/.test(pwd)) score++;
   if (/[a-z]/.test(pwd)) score++;
@@ -23,8 +25,8 @@ const evaluatePassword = (pwd) => {
 };
 
 const STRENGTH_LABELS = ['', 'Faible', 'Moyen', 'Fort', 'Très fort'];
-const STRENGTH_COLORS = ['', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-600'];
-const STRENGTH_TEXT   = ['', 'text-red-500', 'text-amber-600', 'text-emerald-600', 'text-emerald-700'];
+const STRENGTH_COLORS = ['', 'bg-red-400', 'bg-amber-400', 'bg-amber-500', 'bg-emerald-500'];
+const STRENGTH_TEXT   = ['', 'text-red-500', 'text-amber-600', 'text-amber-600', 'text-emerald-600'];
 
 function PasswordStrengthBar({ password }) {
   const score = evaluatePassword(password);
@@ -71,8 +73,12 @@ const RULES = {
   },
   password: (v) => {
     if (!v) return 'Mot de passe requis.';
-    if (v.length < 8) return 'Minimum 8 caractères.';
-    if (evaluatePassword(v) < 2) return 'Trop faible. Ajoutez majuscules, chiffres ou caractères spéciaux.';
+    if (v.length < PWD_MIN) return `Minimum ${PWD_MIN} caractères.`;
+    if (v.length > PWD_MAX) return `Maximum ${PWD_MAX} caractères.`;
+    if (!/[A-Z]/.test(v)) return 'Au moins une lettre majuscule requise.';
+    if (!/[a-z]/.test(v)) return 'Au moins une lettre minuscule requise.';
+    if (!/[0-9]/.test(v)) return 'Au moins un chiffre requis.';
+    if (!/[^A-Za-z0-9]/.test(v)) return 'Au moins un caractère spécial requis (!@#$%...).';
     return '';
   },
   confirmPassword: (v, form) => {
@@ -316,7 +322,7 @@ function RegisterContent() {
         <AuthVisualPanel
           title={<>Bienvenue sur IDS Secure Transport<br />la plateforme de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
           description="IDS Secure Transport est la solution officielle de transfert sécurisé de fichiers du Port Autonome d'Abidjan. Votre demande sera examinée par un administrateur."
-          features={['Accès sur validation administrative', 'Transfert chiffré AES-256', 'Protection de vos données']}
+          features={['Accès sur validation administrative', 'Protection de vos données']}
         />
         <div className="relative flex-1 flex items-center justify-center px-6 py-10 bg-NFS-bg">
           <div className="relative z-10 w-full max-w-sm text-center space-y-5">
@@ -342,7 +348,7 @@ function RegisterContent() {
       <AuthVisualPanel
         title={<>Rejoignez IDS Secure Transport<br />la plateforme de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
         description="IDS Secure Transport est la solution officielle de transfert sécurisé de fichiers du Port Autonome d'Abidjan. Votre demande d'accès sera examinée par un administrateur."
-        features={['Accès sur validation administrative', 'Transfert chiffré AES-256', 'Protection de vos données']}
+        features={['Accès sur validation administrative', 'Protection de vos données']}
       />
 
       {/* Right form panel */}

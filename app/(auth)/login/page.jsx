@@ -132,7 +132,7 @@ export default function LoginPage() {
       <AuthVisualPanel
         title={<>IDS Secure Transport <br /> la solution de partage de fichiers sécurisés du Port Autonome d'Abidjan</>}
         description="IDS Secure Transport est la plateforme officielle de transfert sécurisé du Port Autonome d'Abidjan. Accédez à vos documents en toute confiance, où que vous soyez."
-        features={['Chiffrement AES-256 de bout en bout', 'Authentification OTP & mot de passe', 'Accès contrôlé et audité']}
+        features={['Accès contrôlé et audité']}
       />
 
       <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-NFS-bg">
@@ -143,7 +143,7 @@ export default function LoginPage() {
         <div className="relative z-10 w-full max-w-sm">
           <div className="mb-6">
             <p className="text-xs font-semibold text-NFS-primary uppercase tracking-widest mb-1">Port Autonome d&apos;Abidjan</p>
-            <h1 className="text-2xl font-bold text-NFS-dark">Connexion à IDS Secure Transport</h1>
+            <h1 className="text-2xl font-bold text-NFS-dark">Connexion à la sécurisation des Transferts </h1>
             <p className="text-sm text-NFS-muted mt-1">Choisissez votre méthode d&apos;authentification</p>
           </div>
 

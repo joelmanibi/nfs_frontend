@@ -12,8 +12,10 @@ import { authAPI } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 
 // ── Password strength ──────────────────────────────────────────────────────────
+const PWD_MIN = 8;
+const PWD_MAX = 12;
 const evaluatePassword = (pwd) => {
-  if (!pwd || pwd.length < 8) return 0;
+  if (!pwd || pwd.length < PWD_MIN) return 0;
   let score = 0;
   if (/[A-Z]/.test(pwd)) score++;
   if (/[a-z]/.test(pwd)) score++;
@@ -22,8 +24,8 @@ const evaluatePassword = (pwd) => {
   return score;
 };
 const STRENGTH_LABELS = ['', 'Faible', 'Moyen', 'Fort', 'Très fort'];
-const STRENGTH_COLORS = ['', 'bg-red-400', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-600'];
-const STRENGTH_TEXT   = ['', 'text-red-500', 'text-amber-600', 'text-emerald-600', 'text-emerald-700'];
+const STRENGTH_COLORS = ['', 'bg-red-400', 'bg-amber-400', 'bg-amber-500', 'bg-emerald-500'];
+const STRENGTH_TEXT   = ['', 'text-red-500', 'text-amber-600', 'text-amber-600', 'text-emerald-600'];
 
 function PasswordStrengthBar({ password }) {
   if (!password) return null;
@@ -66,8 +68,12 @@ function ResetPasswordContent() {
 
   const validatePwd = (v) => {
     if (!v) return 'Mot de passe requis.';
-    if (v.length < 8) return 'Minimum 8 caractères.';
-    if (evaluatePassword(v) < 2) return 'Mot de passe trop faible.';
+    if (v.length < PWD_MIN) return `Minimum ${PWD_MIN} caractères.`;
+    if (v.length > PWD_MAX) return `Maximum ${PWD_MAX} caractères.`;
+    if (!/[A-Z]/.test(v)) return 'Au moins une lettre majuscule requise.';
+    if (!/[a-z]/.test(v)) return 'Au moins une lettre minuscule requise.';
+    if (!/[0-9]/.test(v)) return 'Au moins un chiffre requis.';
+    if (!/[^A-Za-z0-9]/.test(v)) return 'Au moins un caractère spécial requis (!@#$%...).';
     return '';
   };
 
@@ -96,7 +102,7 @@ function ResetPasswordContent() {
       <AuthVisualPanel
         title={<>Nouveau<br />mot de passe</>}
         description="Choisissez un mot de passe fort pour sécuriser votre accès à IDS Secure Transport."
-        features={['8 caractères minimum', 'Majuscules + chiffres recommandés', 'Caractères spéciaux acceptés']}
+        features={['8 à 12 caractères obligatoires', 'Majuscule, minuscule, chiffre requis', 'Caractère spécial obligatoire (!@#$%...)']}
       />
 
       <div className="relative flex-1 flex items-center justify-center overflow-hidden px-6 py-12 bg-NFS-bg">
