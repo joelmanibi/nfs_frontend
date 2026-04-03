@@ -21,7 +21,7 @@ const LINK_DURATIONS = [
   { label: '24 heures', value: 24  },
   { label: '3 jours',   value: 72  },
   { label: '7 jours',   value: 168 },
-  { label: '30 jours',  value: 720 },
+  { label: '15 jours',  value: 360 },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

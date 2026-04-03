@@ -24,7 +24,7 @@ const DURATION_OPTIONS = [
   { label: '24h', hours: 24  },
   { label: '3j',  hours: 72  },
   { label: '7j',  hours: 168 },
-  { label: '30j', hours: 720 },
+  { label: '15j', hours: 360 },
 ];
 
 const BASE_URL =
