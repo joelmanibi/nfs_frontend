@@ -127,7 +127,7 @@ export default function PublicDownloadPage() {
       <div className="bg-white border border-NFS-border rounded-2xl shadow-lg p-8 max-w-md w-full space-y-6">
         {/* Brand */}
         <div className="text-center">
-          <p className="text-xs font-semibold tracking-widest text-NFS-primary uppercase">IDS Secure Transport — Partage sécurisé</p>
+          <p className="text-xs font-semibold tracking-widest text-NFS-primary uppercase">PAA Secure Transport — Partage sécurisé</p>
         </div>
 
         {/* File info */}

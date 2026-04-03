@@ -44,7 +44,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-NFS-dark">
-          Bonjour{user?.email ? `, ${user.email.split('@')[0]}` : ''} 👋
+          Bonjour{user?.email ? ` ${user.email.split('@')[0]}` : ''} 👋
         </h1>
         <p className="text-NFS-muted text-sm mt-1">
           Voici un aperçu de votre activité de transfert sécurisé.
