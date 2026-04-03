@@ -9,7 +9,7 @@ import {
 import { formatFileSize, formatDate } from '@/lib/utils';
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || 'http://10.112.30.143:8000/api';
+  process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export default function PublicDownloadPage() {
   const { token } = useParams();

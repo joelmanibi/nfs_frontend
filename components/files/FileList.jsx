@@ -30,7 +30,7 @@ const DURATION_OPTIONS = [
 const BASE_URL =
   (typeof window !== 'undefined' ? window.location.origin : '') ||
   process.env.NEXT_PUBLIC_FRONTEND_URL ||
-  'http://10.112.30.143:3000';
+  'https://securetransport.paa.ci';
 
 // ── File type icon + badge ─────────────────────────────────────────────────────
 function FileTypeCell({ filename }) {

@@ -12,7 +12,7 @@ const nextConfig = {
    */
   async rewrites() {
     const backendBase =
-      process.env.API_URL || 'http://10.112.30.143:8000/api';
+      process.env.API_URL || '/api';
 
     return [
       {
