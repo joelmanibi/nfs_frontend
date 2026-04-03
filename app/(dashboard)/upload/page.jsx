@@ -307,7 +307,7 @@ export default function UploadPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-NFS-dark">Envoyer des fichiers</h1>
-          <p className="text-xs text-NFS-muted">Chiffrement AES-256 de bout en bout</p>
+          <p className="text-xs text-NFS-muted">Chiffrement de bout en bout</p>
         </div>
       </div>
 

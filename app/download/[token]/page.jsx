@@ -208,7 +208,7 @@ export default function PublicDownloadPage() {
         </button>
 
         <p className="text-center text-xs text-NFS-muted/60">
-          Fichier chiffré AES-256 · Déchiffré à la volée
+          Fichier chiffré · Déchiffré à la volée
         </p>
       </div>
     </div>

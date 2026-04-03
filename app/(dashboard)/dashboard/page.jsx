@@ -112,7 +112,7 @@ export default function DashboardPage() {
         <div>
           <h3 className="font-semibold text-white">Envoyer un fichier</h3>
           <p className="text-sm text-white/70 mt-0.5">
-            Envoyez un fichier chiffré AES-256 à n&apos;importe quel destinataire.
+            Envoyez un fichier chiffré  à n&apos;importe quel destinataire.
           </p>
         </div>
         <Link href="/upload">
