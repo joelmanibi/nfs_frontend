@@ -46,7 +46,7 @@ async function buildZip(files, onProgress) {
     (meta) => onProgress && onProgress(meta.percent),
   );
   const date = new Date().toISOString().slice(0, 10);
-  return new File([blob], `envoi_IDS_${date}.zip`, { type: 'application/zip' });
+  return new File([blob], `envoi_PAA_${date}.zip`, { type: 'application/zip' });
 }
 
 export default function UploadPage() {
