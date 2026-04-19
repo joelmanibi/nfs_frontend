@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import {
   Upload, FileText, X, Lock, Unlock, Send,
   Archive, Link2, UserPlus, Clock, MessageSquare,
-  CheckCircle2, Loader2, Eye, EyeOff,
+  CheckCircle2, Loader2, Copy, Check, RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Input from '@/components/ui/Input';
@@ -63,7 +63,7 @@ export default function UploadPage() {
   // ── Protection ──
   const [isProtected, setProtected] = useState(false);
   const [downloadCode, setCode]     = useState('');
-  const [showCode, setShowCode]     = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   // ── Lien de téléchargement ──
   const [sendViaLink, setSendViaLink]      = useState(false);
   const [linkExpiresInHours, setLinkHours] = useState(24);
@@ -79,6 +79,21 @@ export default function UploadPage() {
   const [loadingSugg, setLoadingSugg]   = useState(false);
   const searchTimerRef = useRef(null);
   const dropdownRef    = useRef(null);
+
+  /* ── Génère un code de protection à 6 chiffres ── */
+  const generateCode = () => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setCode(code);
+    setCodeCopied(false);
+    return code;
+  };
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(downloadCode).then(() => {
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2500);
+    });
+  };
 
   /* ── Fermer le dropdown au clic extérieur ── */
   useEffect(() => {
@@ -197,8 +212,7 @@ export default function UploadPage() {
     const e = {};
     if (!files.length) e.file = 'Veuillez sélectionner au moins un fichier.';
     if (!finalEmails.length) e.recipients = 'Ajoutez au moins un destinataire.';
-    if (isProtected && !downloadCode.trim())
-      e.downloadCode = 'Code de protection requis.';
+    // Le code est auto-généré — aucune validation manuelle nécessaire
     return e;
   };
 
@@ -517,7 +531,10 @@ export default function UploadPage() {
         {/* ── Protection par code ── */}
         <div>
           <button type="button"
-            onClick={() => { setProtected((p) => !p); setCode(''); }}
+            onClick={() => {
+              if (isProtected) { setProtected(false); setCode(''); }
+              else { setProtected(true); generateCode(); }
+            }}
             className={[
               'flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all w-full',
               isProtected
@@ -530,38 +547,35 @@ export default function UploadPage() {
             {isProtected && <Badge color="yellow" className="ml-auto">Actif</Badge>}
           </button>
 
-          {isProtected && (
-            <div className="mt-3 flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-NFS-dark">Code de protection</label>
-              <div className="relative">
-                <input
-                  type={showCode ? 'text' : 'password'}
-                  placeholder="Code que le destinataire devra saisir"
-                  value={downloadCode}
-                  onChange={(e) => setCode(e.target.value)}
-                  className={[
-                    'w-full rounded-xl px-3.5 py-2.5 pr-10 text-sm',
-                    'bg-white border text-NFS-text placeholder-NFS-muted',
-                    'transition-colors duration-150',
-                    'focus:outline-none focus:ring-2 focus:ring-NFS-primary focus:border-NFS-primary',
-                    errors.downloadCode
-                      ? 'border-red-400 focus:ring-red-400'
-                      : 'border-NFS-border hover:border-NFS-primary/50',
-                  ].join(' ')}
-                />
+          {isProtected && downloadCode && (
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="text-sm font-medium text-NFS-dark">Code de protection généré</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                  <span className="text-2xl font-bold tracking-[0.4em] text-amber-700 font-mono">
+                    {downloadCode}
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowCode((v) => !v)}
-                  tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-NFS-muted hover:text-NFS-dark transition-colors"
+                  onClick={copyCode}
+                  title="Copier le code"
+                  className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-NFS-border bg-white text-NFS-muted hover:text-NFS-dark hover:border-NFS-primary/50 transition-colors"
                 >
-                  {showCode ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {codeCopied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={generateCode}
+                  title="Régénérer un nouveau code"
+                  className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-NFS-border bg-white text-NFS-muted hover:text-NFS-dark hover:border-NFS-primary/50 transition-colors"
+                >
+                  <RefreshCw size={16} />
                 </button>
               </div>
-              {errors.downloadCode && (
-                <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span> {errors.downloadCode}</p>
-              )}
-              <p className="text-xs text-NFS-muted">Communiquez ce code au destinataire par un autre canal.</p>
+              <p className="text-xs text-amber-700 font-medium">
+                ⚠ Notez ce code et communiquez-le au destinataire par un autre canal (SMS, appel...).
+              </p>
             </div>
           )}
         </div>

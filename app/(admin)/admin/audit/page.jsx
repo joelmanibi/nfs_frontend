@@ -5,6 +5,7 @@ import { FileText, Search, RefreshCw, ChevronDown, ChevronUp, AlertCircle, Info,
 import { adminAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const LEVEL_STYLES = {
   error: { icon: XCircle,       cls: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20' },
@@ -59,7 +60,38 @@ function LogRow({ entry }) {
   );
 }
 
+// ── Vue simplifiée pour ADMIN (sans données sensibles) ───────────────────────
+const ACTION_COLORS = {
+  'UPLOAD':          'text-blue-400 bg-blue-500/10 border-blue-500/20',
+  'TÉLÉCHARGEMENT':  'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  'CONNEXION':       'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  'PARTAGE':         'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  'INSCRIPTION':     'text-sky-400 bg-sky-500/10 border-sky-500/20',
+  'RESET MDP':       'text-orange-400 bg-orange-500/10 border-orange-500/20',
+  'ADMIN':           'text-red-400 bg-red-500/10 border-red-500/20',
+};
+
+function RestrictedLogRow({ entry }) {
+  const actionCls = ACTION_COLORS[entry.action] || 'text-slate-400 bg-slate-700/40 border-slate-600';
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 border border-slate-700/50 rounded-xl bg-slate-800/50 text-sm font-mono">
+      <span className="text-slate-400 w-20 shrink-0">{entry.time}</span>
+      <span className="text-white w-40 shrink-0 truncate">{entry.actor}</span>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs font-semibold w-36 shrink-0 ${actionCls}`}>
+        {entry.action}
+      </span>
+      <span className={`font-bold w-10 shrink-0 ${entry.status === 'OK' ? 'text-emerald-400' : 'text-red-400'}`}>
+        {entry.status}
+      </span>
+      <span className="text-slate-500 text-xs">{entry.size || '—'}</span>
+    </div>
+  );
+}
+
 export default function AdminAuditPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
   const [logs, setLogs]         = useState([]);
   const [count, setCount]       = useState(0);
   const [loading, setLoading]   = useState(true);
@@ -103,7 +135,10 @@ export default function AdminAuditPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Rapport d&apos;audit</h1>
-            <p className="text-xs text-slate-400">{count} entrée{count > 1 ? 's' : ''} affichée{count > 1 ? 's' : ''}</p>
+            <p className="text-xs text-slate-400">
+              {count} entrée{count > 1 ? 's' : ''} affichée{count > 1 ? 's' : ''}
+              {!isSuperAdmin && <span className="ml-2 text-amber-400">— Vue restreinte</span>}
+            </p>
           </div>
         </div>
 
@@ -137,7 +172,18 @@ export default function AdminAuditPage() {
         </div>
       </div>
 
-      <div className="space-y-0">
+      {/* En-tête de colonnes pour la vue restreinte ADMIN */}
+      {!isSuperAdmin && !loading && logs.length > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-700/50">
+          <span className="w-20 shrink-0">Heure</span>
+          <span className="w-40 shrink-0">Utilisateur</span>
+          <span className="w-36 shrink-0">Action</span>
+          <span className="w-10 shrink-0">Statut</span>
+          <span>Taille</span>
+        </div>
+      )}
+
+      <div className="space-y-1.5 mt-2">
         {loading ? (
           <div className="text-center text-slate-500 py-16">Chargement des logs...</div>
         ) : logs.length === 0 ? (
@@ -145,8 +191,10 @@ export default function AdminAuditPage() {
             <FileText size={36} className="mx-auto mb-3 opacity-30" />
             <p>Aucun log trouvé{filter ? ' pour ce filtre' : ''}.</p>
           </div>
-        ) : (
+        ) : isSuperAdmin ? (
           logs.map((entry, i) => <LogRow key={i} entry={entry} />)
+        ) : (
+          logs.map((entry, i) => <RestrictedLogRow key={i} entry={entry} />)
         )}
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   FileText, Download, Lock, Calendar,
   HardDrive, Mail, X, ShieldAlert,
-  Link2, Copy, Check, Clock, ShieldOff, Shield, Trash2, Hash,
+  Link2, Copy, Check, Clock, ShieldOff, Shield, Trash2, Hash, CheckCircle2, Hourglass,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -214,6 +214,19 @@ export default function FileCard({ file, mode, onUpdated, onDeleted }) {
           <span className="flex items-center gap-1.5 col-span-2 truncate">
             <Mail size={11} /> {file.receiverEmail}
           </span>
+        )}
+        {mode === 'sent' && (
+          file.downloadedAt ? (
+            <span className="flex items-center gap-1.5 col-span-2 text-emerald-600 font-medium">
+              <CheckCircle2 size={11} />
+              Téléchargé le {formatDate(file.downloadedAt)}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 col-span-2 text-amber-600">
+              <Hourglass size={11} />
+              En attente de téléchargement
+            </span>
+          )
         )}
         {mode === 'inbox' && file.sender?.email && (
           <span className="flex items-center gap-1.5 col-span-2 truncate">

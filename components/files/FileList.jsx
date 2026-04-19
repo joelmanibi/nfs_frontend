@@ -5,7 +5,7 @@ import {
   Inbox, Send, FileText, Download, Lock, Hash,
   HardDrive, Mail, Link2, Copy, Check, Clock,
   ShieldOff, Shield, Trash2, X, ShieldAlert,
-  Search, CalendarRange, RotateCcw,
+  Search, CalendarRange, RotateCcw, CheckCircle2, Hourglass,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Pagination from '@/components/ui/Pagination';
@@ -179,7 +179,19 @@ function FileTableRow({ file, mode, onUpdated, onDeleted }) {
                 <ShieldOff size={10} /> Bloqué
               </span>
             )}
-            {!file.isProtected && !file.isBlocked && <span className="text-xs text-NFS-muted/40">—</span>}
+            {mode === 'sent' && (
+              file.downloadedAt ? (
+                <span title={`Téléchargé par ${file.downloadedBy} le ${formatDate(file.downloadedAt)}`}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium whitespace-nowrap">
+                  <CheckCircle2 size={10} /> Téléchargé
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slate-50 text-slate-500 border border-slate-200 font-medium whitespace-nowrap">
+                  <Hourglass size={10} /> En attente
+                </span>
+              )
+            )}
+            {mode === 'inbox' && !file.isProtected && !file.isBlocked && <span className="text-xs text-NFS-muted/40">—</span>}
           </div>
         </td>
 

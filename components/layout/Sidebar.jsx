@@ -69,7 +69,7 @@ export default function Sidebar() {
             <p className="text-xs text-white/50 capitalize">{user?.role?.toLowerCase()}</p>
           </div>
         </div>
-        {user?.role === 'ADMIN' && (
+        {['ADMIN', 'SUPER_ADMIN'].includes(user?.role) && (
           <Link
             href="/admin"
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-red-300 hover:text-white hover:bg-red-500/20 transition-all mb-1"

@@ -68,7 +68,7 @@ export default function Topbar() {
               </Link>
             );
           })}
-          {user?.role === 'ADMIN' && (
+          {['ADMIN', 'SUPER_ADMIN'].includes(user?.role) && (
             <Link
               href="/admin"
               onClick={() => setOpen(false)}

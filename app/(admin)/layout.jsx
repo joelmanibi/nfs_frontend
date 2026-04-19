@@ -66,7 +66,9 @@ function AdminSidebar() {
           </div>
           <div className="overflow-hidden">
             <p className="text-xs font-semibold text-white truncate">{user?.email}</p>
-            <p className="text-xs text-red-400 font-medium">Administrateur</p>
+            <p className="text-xs text-red-400 font-medium">
+          {user?.role === 'SUPER_ADMIN' ? 'Super Administrateur' : 'Administrateur'}
+        </p>
           </div>
         </div>
         <button
@@ -88,10 +90,10 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     if (!ready) return;
     if (!isAuthenticated) { router.replace('/login'); return; }
-    if (user?.role !== 'ADMIN') { router.replace('/dashboard'); }
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(user?.role)) { router.replace('/dashboard'); }
   }, [ready, isAuthenticated, user, router]);
 
-  if (!ready || !isAuthenticated || user?.role !== 'ADMIN') {
+  if (!ready || !isAuthenticated || !['ADMIN', 'SUPER_ADMIN'].includes(user?.role)) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="w-8 h-8 border-[3px] border-red-400 border-t-transparent rounded-full animate-spin" />

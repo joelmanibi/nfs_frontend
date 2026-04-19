@@ -108,8 +108,12 @@ export default function LoginPage() {
         setTab('otp');
         return;
       }
-      toast.success('Authentification réussie !');
-      login(data.token, data.user);
+      // Mot de passe valide → OTP envoyé → redirection vers la page de vérification
+      if (data.otpRequired) {
+        toast.success('Mot de passe vérifié. Un code OTP a été envoyé à votre email.');
+        router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+        return;
+      }
     } catch (err) {
       if (err?.response?.status === 429) { handleRateLimit(err); return; }
       if (err?.response?.data?.pending) { setPending(true); return; }
