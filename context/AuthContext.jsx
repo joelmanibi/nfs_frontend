@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const COOKIE_TOKEN = 'NFS_token';
 const COOKIE_USER  = 'NFS_user';
-const COOKIE_OPTS  = { expires: 1 / 12, sameSite: 'Strict' }; // ~2 h
+const COOKIE_OPTS  = { expires: 1 / 96, sameSite: 'Strict' }; // ~15 min
 
 const AuthContext = createContext(null);
 

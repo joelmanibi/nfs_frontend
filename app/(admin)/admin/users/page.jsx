@@ -8,11 +8,13 @@ import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils';
 
 function RoleBadge({ role }) {
+  const cls =
+    role === 'SUPER_ADMIN' ? 'bg-amber-500/20 text-amber-400' :
+    role === 'ADMIN'       ? 'bg-red-500/20 text-red-400'     :
+                             'bg-blue-500/20 text-blue-400';
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-      role === 'ADMIN' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
-    }`}>
-      {role === 'ADMIN' ? <ShieldCheck size={11} /> : <UserIcon size={11} />}
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>
+      <ShieldCheck size={11} />
       {role}
     </span>
   );
@@ -332,7 +334,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     {u.id === currentUser?.id ? (
                       <RoleBadge role={u.role} />
-                    ) : (
+                    ) : currentUser?.role === 'SUPER_ADMIN' ? (
                       <select
                         value={u.role}
                         disabled={updating === u.id}
@@ -341,14 +343,17 @@ export default function AdminUsersPage() {
                       >
                         <option value="USER">USER</option>
                         <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER_ADMIN</option>
                       </select>
+                    ) : (
+                      <RoleBadge role={u.role} />
                     )}
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-xs hidden lg:table-cell">
                     {new Date(u.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {u.id !== currentUser?.id && (
+                    {u.id !== currentUser?.id && currentUser?.role === 'SUPER_ADMIN' && (
                       <button
                         onClick={() => handleDelete(u.id, u.email)}
                         disabled={deleting === u.id}
