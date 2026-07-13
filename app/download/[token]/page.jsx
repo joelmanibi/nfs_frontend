@@ -14,7 +14,7 @@ const API_BASE =
 export default function PublicDownloadPage() {
   const { token } = useParams();
 
-  const [status, setStatus]         = useState('loading'); // loading | ready | expired | error
+  const [status, setStatus]         = useState('loading'); // loading | ready | expired | blocked | error
   const [fileInfo, setFileInfo]     = useState(null);
   const [message, setMessage]       = useState('');
 
@@ -33,7 +33,7 @@ export default function PublicDownloadPage() {
         if (res.status === 410) { setStatus('expired'); setMessage(data.message); return; }
         if (!res.ok)            { setStatus('error');   setMessage(data.message); return; }
         setFileInfo(data);
-        setStatus('ready');
+        setStatus(data.isBlocked ? 'blocked' : 'ready');
       })
       .catch(() => {
         setStatus('error');
@@ -101,6 +101,21 @@ export default function PublicDownloadPage() {
           <h1 className="text-xl font-bold text-NFS-dark">Lien expiré</h1>
           <p className="text-sm text-NFS-muted">{message || 'Ce lien de téléchargement n\'est plus valide.'}</p>
           <p className="text-xs text-NFS-muted/70">Contactez l'expéditeur pour obtenir un nouveau lien.</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Blocked ─── */
+  if (status === 'blocked') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-NFS-bg p-4">
+        <div className="bg-white border border-NFS-border rounded-2xl shadow-lg p-8 max-w-md w-full text-center space-y-4">
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 border border-red-200 mx-auto">
+            <ShieldOff size={24} className="text-red-500" />
+          </div>
+          <h1 className="text-xl font-bold text-NFS-dark">Fichier indisponible</h1>
+          <p className="text-sm text-NFS-muted">Ce fichier a été bloqué par l&apos;expéditeur et n&apos;est plus disponible au téléchargement.</p>
         </div>
       </div>
     );

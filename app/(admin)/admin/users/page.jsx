@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Users, Search, RefreshCw, Trash2, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Building2, Globe, Phone, Wifi, WifiOff } from 'lucide-react';
+import { Users, Search, RefreshCw, Trash2, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Building2, Globe, Phone, Wifi, WifiOff, UserPlus, FileBarChart, Lock, Unlock, Ban } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils';
+import CreateUserModal from '@/components/admin/CreateUserModal';
+import UserReportModal from '@/components/admin/UserReportModal';
 
 function RoleBadge({ role }) {
   const cls =
@@ -16,6 +18,14 @@ function RoleBadge({ role }) {
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>
       <ShieldCheck size={11} />
       {role}
+    </span>
+  );
+}
+
+function BlockedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
+      <Ban size={10} /> Bloqué
     </span>
   );
 }
@@ -42,21 +52,26 @@ export default function AdminUsersPage() {
   const [search, setSearch]     = useState('');
   const [draftSearch, setDraftSearch] = useState('');
   const [typeFilter, setTypeFilter]   = useState('all'); // 'all' | 'internal' | 'external'
+  const [roleFilter, setRoleFilter]   = useState('all'); // 'all' | 'USER' | 'ADMIN' | 'SUPER_ADMIN'
   const [loading, setLoading]   = useState(true);
   const [deleting, setDeleting]       = useState(null);
   const [updating, setUpdating]       = useState(null);
   const [togglingType, setTogglingType] = useState(null);
+  const [blocking, setBlocking]       = useState(null);
   // Pending
   const [pending, setPending]         = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [actioning, setActioning]     = useState(null); // userId being approved/rejected
+  const [createOpen, setCreateOpen]   = useState(false);
+  const [reportUser, setReportUser]   = useState(null);
 
-  const fetchUsers = useCallback(async (p = 1, s = search, tf = typeFilter) => {
+  const fetchUsers = useCallback(async (p = 1, s = search, tf = typeFilter, rf = roleFilter) => {
     setLoading(true);
     try {
       const params = { page: p, limit: 20, search: s };
       if (tf === 'internal') params.isInternal = 'true';
       if (tf === 'external') params.isInternal = 'false';
+      if (rf !== 'all') params.role = rf;
       const { data } = await adminAPI.getUsers(params);
       setUsers(data.users);
       setCount(data.count);
@@ -67,7 +82,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, typeFilter]);
+  }, [search, typeFilter, roleFilter]);
 
   const fetchPending = useCallback(async () => {
     setPendingLoading(true);
@@ -143,6 +158,19 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleBlockToggle = async (userId, currentValue) => {
+    setBlocking(userId);
+    try {
+      const { data } = await adminAPI.blockUser(userId);
+      toast.success(data.isBlocked ? 'Utilisateur bloqué.' : 'Utilisateur débloqué.');
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, isBlocked: data.isBlocked } : u));
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setBlocking(null);
+    }
+  };
+
   const handleDelete = async (userId, email) => {
     if (!confirm(`Supprimer le compte ${email} ? Cette action est irréversible.`)) return;
     setDeleting(userId);
@@ -171,7 +199,27 @@ export default function AdminUsersPage() {
             <p className="text-xs text-slate-400">{count} compte{count > 1 ? 's' : ''} enregistré{count > 1 ? 's' : ''}</p>
           </div>
         </div>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all"
+        >
+          <UserPlus size={14} />
+          Créer un utilisateur
+        </button>
       </div>
+
+      <CreateUserModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => fetchUsers(page, search)}
+        canAssignSuperAdmin={currentUser?.role === 'SUPER_ADMIN'}
+      />
+
+      <UserReportModal
+        open={Boolean(reportUser)}
+        onClose={() => setReportUser(null)}
+        user={reportUser}
+      />
 
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-slate-800/50 rounded-xl p-1 w-fit border border-slate-700">
@@ -272,6 +320,18 @@ export default function AdminUsersPage() {
             ))}
           </div>
 
+          {/* Filtre par rôle */}
+          <select
+            value={roleFilter}
+            onChange={(e) => { const v = e.target.value; setRoleFilter(v); fetchUsers(1, search, typeFilter, v); }}
+            className="bg-slate-800 border border-slate-700 text-sm text-white rounded-xl px-3 py-2 focus:outline-none focus:border-slate-500"
+          >
+            <option value="all">Tous les rôles</option>
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+          </select>
+
           {/* Recherche + refresh */}
           <div className="flex items-center gap-2">
             <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -311,7 +371,10 @@ export default function AdminUsersPage() {
                 <tr key={u.id} className="hover:bg-slate-700/30 transition-colors">
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium text-white">{u.firstName} {u.lastName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-white">{u.firstName} {u.lastName}</p>
+                        {u.isBlocked && <BlockedBadge />}
+                      </div>
                       <p className="text-xs text-slate-400 md:hidden">{u.email}</p>
                     </div>
                   </td>
@@ -353,15 +416,39 @@ export default function AdminUsersPage() {
                     {new Date(u.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {u.id !== currentUser?.id && currentUser?.role === 'SUPER_ADMIN' && (
+                    <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => handleDelete(u.id, u.email)}
-                        disabled={deleting === u.id}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50"
+                        onClick={() => setReportUser(u)}
+                        title="Générer un rapport PDF"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
                       >
-                        <Trash2 size={12} /> {deleting === u.id ? '...' : 'Supprimer'}
+                        <FileBarChart size={12} /> Rapport
                       </button>
-                    )}
+                      {u.id !== currentUser?.id && (u.role !== 'SUPER_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+                        <button
+                          onClick={() => handleBlockToggle(u.id, u.isBlocked)}
+                          disabled={blocking === u.id}
+                          title={u.isBlocked ? 'Débloquer ce compte' : 'Bloquer ce compte'}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs border transition-all disabled:opacity-50 ${
+                            u.isBlocked
+                              ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border-amber-500/20'
+                          }`}
+                        >
+                          {u.isBlocked ? <Unlock size={12} /> : <Lock size={12} />}
+                          {blocking === u.id ? '...' : u.isBlocked ? 'Débloquer' : 'Bloquer'}
+                        </button>
+                      )}
+                      {u.id !== currentUser?.id && currentUser?.role === 'SUPER_ADMIN' && (
+                        <button
+                          onClick={() => handleDelete(u.id, u.email)}
+                          disabled={deleting === u.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50"
+                        >
+                          <Trash2 size={12} /> {deleting === u.id ? '...' : 'Supprimer'}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

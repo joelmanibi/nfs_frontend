@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, ArrowLeftRight, Link2, HardDrive, FileText, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Users, ArrowLeftRight, Link2, HardDrive, FileText, RefreshCw, FolderOpen, FileDown } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
+import ActivityOverview from '@/components/admin/ActivityOverview';
+import AdAccountsChart from '@/components/admin/AdAccountsChart';
+import TopSendersChart from '@/components/admin/TopSendersChart';
 
 function StatCard({ icon: Icon, label, value, color, href, unit }) {
   const content = (
@@ -30,8 +34,10 @@ function formatSize(bytes) {
 }
 
 export default function AdminDashboardPage() {
-  const [stats, setStats]     = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats]           = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [chartDateRange, setChartDateRange] = useState(null);
+  const [exporting, setExporting]   = useState(false);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -47,6 +53,18 @@ export default function AdminDashboardPage() {
 
   useEffect(() => { fetchStats(); }, []);
 
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const { exportAdminReportPDF } = await import('@/lib/exportReport');
+      await exportAdminReportPDF({ stats, ...chartDateRange });
+    } catch {
+      toast.error("Échec de l'export du rapport PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -54,13 +72,23 @@ export default function AdminDashboardPage() {
           <h1 className="text-2xl font-bold text-white">Vue d&apos;ensemble</h1>
           <p className="text-slate-400 text-sm mt-1">Statistiques globales de la plateforme IDS Secure Transport</p>
         </div>
-        <button
-          onClick={fetchStats}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Actualiser
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileDown size={14} className={exporting ? 'animate-pulse' : ''} />
+            {exporting ? 'Génération…' : 'Exporter en PDF'}
+          </button>
+          <button
+            onClick={fetchStats}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Actualiser
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -82,11 +110,18 @@ export default function AdminDashboardPage() {
         />
       </div>
 
+      <ActivityOverview onRangeChange={setChartDateRange} />
+
+      <AdAccountsChart />
+
+      <TopSendersChart />
+
       {/* Quick access cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
         {[
           { href: '/admin/users',     icon: Users,          label: 'Gestion des utilisateurs', desc: 'Modifier les rôles, supprimer des comptes', color: 'text-blue-400' },
           { href: '/admin/transfers', icon: ArrowLeftRight, label: 'Gestion des transferts',    desc: 'Voir et gérer tous les transferts de fichiers', color: 'text-purple-400' },
+          { href: '/admin/collections', icon: FolderOpen,   label: 'Collecte de fichiers',      desc: 'Configurer les sources distantes et consulter les exécutions', color: 'text-amber-400' },
           { href: '/admin/audit',     icon: FileText,       label: 'Rapport d\'audit',          desc: 'Consulter les logs et événements du système', color: 'text-emerald-400' },
         ].map(({ href, icon: Icon, label, desc, color }) => (
           <Link key={href} href={href}

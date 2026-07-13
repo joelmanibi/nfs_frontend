@@ -205,6 +205,16 @@ export default function FileCard({ file, mode, onUpdated, onDeleted }) {
         <span className="flex items-center gap-1.5">
           <Calendar size={11} /> {formatDate(file.createdAt)}
         </span>
+        {(() => {
+          const exp = new Date(new Date(file.createdAt).getTime() + 15 * 24 * 3600 * 1000);
+          const expired = exp < new Date();
+          return (
+            <span className={`flex items-center gap-1.5 col-span-2 font-medium ${expired ? 'text-red-500' : 'text-NFS-muted'}`}>
+              <Clock size={11} />
+              {expired ? `Expiré le ${formatDate(exp)}` : `Expire le ${formatDate(exp)}`}
+            </span>
+          );
+        })()}
         {file.reference && (
           <span className="flex items-center gap-1.5 col-span-2 font-mono tracking-wide text-NFS-primary/80 select-all">
             <Hash size={11} /> {file.reference}

@@ -83,7 +83,7 @@ export default function LoginPage() {
     try {
       const { data } = await authAPI.loginWithLDAP(ldapUsername.trim(), ldapPassword);
       toast.success('Authentification PAA réussie !');
-      login(data.token, data.user);
+      login(data.user);
     } catch (err) {
       if (err?.response?.status === 429) { handleRateLimit(err); return; }
       if (err?.response?.data?.pending) { setPending(true); return; }

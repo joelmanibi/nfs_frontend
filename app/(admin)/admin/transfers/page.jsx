@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ArrowLeftRight, Link2, Search, RefreshCw, Trash2, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeftRight, Link2, Filter, X, RefreshCw, Trash2, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminAPI } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
@@ -21,6 +21,54 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
+// ── En-tête de colonne cliquable : ouvre un champ de filtre pour cette colonne ──
+function FilterableHeader({ label, columnKey, value, openFilterCol, setOpenFilterCol, onApply, className = '' }) {
+  const isOpen = openFilterCol === columnKey;
+  const [draft, setDraft] = useState(value || '');
+
+  useEffect(() => { if (isOpen) setDraft(value || ''); }, [isOpen, value]);
+
+  const apply = () => {
+    onApply(columnKey, draft.trim());
+    setOpenFilterCol(null);
+  };
+
+  if (isOpen) {
+    return (
+      <th className={`text-left px-4 py-2 ${className}`}>
+        <input
+          autoFocus
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') apply();
+            if (e.key === 'Escape') setOpenFilterCol(null);
+          }}
+          onBlur={apply}
+          placeholder={`Filtrer par ${label.toLowerCase()}...`}
+          className="bg-slate-900 border border-slate-600 text-white text-xs normal-case font-normal rounded-lg px-2 py-1.5 w-full focus:outline-none focus:border-slate-400"
+        />
+      </th>
+    );
+  }
+
+  return (
+    <th
+      className={`text-left px-4 py-3 cursor-pointer select-none group ${className}`}
+      onClick={() => setOpenFilterCol(columnKey)}
+      title={`Filtrer par ${label.toLowerCase()}`}
+    >
+      <span className="inline-flex items-center gap-1.5">
+        {label}
+        <Filter size={11} className={value ? 'text-blue-400' : 'text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity'} />
+      </span>
+    </th>
+  );
+}
+
+const EMPTY_FILTERS = { reference: '', originalName: '', senderEmail: '', receiverEmail: '' };
+
 export default function AdminTransfersPage() {
   const [tab, setTab]           = useState('all');   // 'all' | 'active'
   const [transfers, setTransfers] = useState([]);
@@ -28,22 +76,28 @@ export default function AdminTransfersPage() {
   const [count, setCount]       = useState(0);
   const [pages, setPages]       = useState(1);
   const [page, setPage]         = useState(1);
-  const [search, setSearch]     = useState('');
-  const [draftSearch, setDraftSearch] = useState('');
+  const [filters, setFilters]   = useState(EMPTY_FILTERS);
+  const [openFilterCol, setOpenFilterCol] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [deleting, setDeleting] = useState(null);
 
-  const fetchTransfers = useCallback(async (p = 1, s = search) => {
+  const fetchTransfers = useCallback(async (p = 1, f = filters) => {
     setLoading(true);
     try {
-      const { data } = await adminAPI.getTransfers({ page: p, limit: 20, search: s });
+      const params = { page: p, limit: 20 };
+      if (f.reference)     params.reference     = f.reference;
+      if (f.originalName)  params.originalName  = f.originalName;
+      if (f.senderEmail)   params.senderEmail   = f.senderEmail;
+      if (f.receiverEmail) params.receiverEmail = f.receiverEmail;
+
+      const { data } = await adminAPI.getTransfers(params);
       setTransfers(data.transfers);
       setCount(data.count);
       setPages(data.pages);
       setPage(p);
     } catch (err) { toast.error(getErrorMessage(err)); }
     finally { setLoading(false); }
-  }, [search]);
+  }, [filters]);
 
   const fetchActive = useCallback(async () => {
     setLoading(true);
@@ -55,15 +109,24 @@ export default function AdminTransfersPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'all') fetchTransfers(1, '');
+    if (tab === 'all') fetchTransfers(1, EMPTY_FILTERS);
     else fetchActive();
   }, [tab]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setSearch(draftSearch);
-    fetchTransfers(1, draftSearch);
+  const applyFilter = (columnKey, value) => {
+    setFilters((prev) => {
+      const next = { ...prev, [columnKey]: value };
+      fetchTransfers(1, next);
+      return next;
+    });
   };
+
+  const clearFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    fetchTransfers(1, EMPTY_FILTERS);
+  };
+
+  const hasActiveFilters = Object.values(filters).some(Boolean);
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ce transfert ? Les liens associés seront aussi supprimés.')) return;
@@ -92,19 +155,13 @@ export default function AdminTransfersPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {tab === 'all' && (
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="Fichier, email..." value={draftSearch}
-                  onChange={(e) => setDraftSearch(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-slate-500 w-44"
-                />
-              </div>
-              <button type="submit" className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-sm transition-all">Chercher</button>
-            </form>
+          {tab === 'all' && hasActiveFilters && (
+            <button onClick={clearFilters}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-sm transition-all">
+              <X size={13} /> Effacer les filtres
+            </button>
           )}
-          <button onClick={() => tab === 'all' ? fetchTransfers(page, search) : fetchActive()}
+          <button onClick={() => tab === 'all' ? fetchTransfers(page, filters) : fetchActive()}
             className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -121,6 +178,12 @@ export default function AdminTransfersPage() {
         </TabButton>
       </div>
 
+      {tab === 'all' && (
+        <p className="text-xs text-slate-500 -mt-3">
+          Cliquez sur l&apos;en-tête d&apos;une colonne pour filtrer (référence, fichier, expéditeur, destinataire).
+        </p>
+      )}
+
       {/* Table */}
       <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -128,9 +191,14 @@ export default function AdminTransfersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-3">Fichier</th>
-                  <th className="text-left px-4 py-3 hidden md:table-cell">Expéditeur</th>
-                  <th className="text-left px-4 py-3 hidden md:table-cell">Destinataire</th>
+                  <FilterableHeader label="Référence" columnKey="reference" value={filters.reference}
+                    openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
+                  <FilterableHeader label="Fichier" columnKey="originalName" value={filters.originalName}
+                    openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
+                  <FilterableHeader label="Expéditeur" columnKey="senderEmail" value={filters.senderEmail}
+                    openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} className="hidden md:table-cell" />
+                  <FilterableHeader label="Destinataire" columnKey="receiverEmail" value={filters.receiverEmail}
+                    openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} className="hidden md:table-cell" />
                   <th className="text-left px-4 py-3 hidden lg:table-cell">Taille</th>
                   <th className="text-left px-4 py-3 hidden lg:table-cell">Date</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -138,11 +206,12 @@ export default function AdminTransfersPage() {
               </thead>
               <tbody className="divide-y divide-slate-700/50">
                 {loading ? (
-                  <tr><td colSpan={6} className="text-center text-slate-500 py-10">Chargement...</td></tr>
+                  <tr><td colSpan={7} className="text-center text-slate-500 py-10">Chargement...</td></tr>
                 ) : transfers.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center text-slate-500 py-10">Aucun transfert trouvé.</td></tr>
+                  <tr><td colSpan={7} className="text-center text-slate-500 py-10">Aucun transfert trouvé.</td></tr>
                 ) : transfers.map((t) => (
                   <tr key={t.id} className="hover:bg-slate-700/30 transition-colors">
+                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">{t.reference || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-white truncate max-w-[160px]">{t.originalName}</p>
@@ -215,9 +284,9 @@ export default function AdminTransfersPage() {
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700 text-sm text-slate-400">
             <span>Page {page} / {pages}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => fetchTransfers(page - 1, search)} disabled={page <= 1 || loading}
+              <button onClick={() => fetchTransfers(page - 1, filters)} disabled={page <= 1 || loading}
                 className="p-1.5 rounded-lg hover:bg-slate-700 disabled:opacity-30 transition-all"><ChevronLeft size={16} /></button>
-              <button onClick={() => fetchTransfers(page + 1, search)} disabled={page >= pages || loading}
+              <button onClick={() => fetchTransfers(page + 1, filters)} disabled={page >= pages || loading}
                 className="p-1.5 rounded-lg hover:bg-slate-700 disabled:opacity-30 transition-all"><ChevronRight size={16} /></button>
             </div>
           </div>
@@ -226,4 +295,3 @@ export default function AdminTransfersPage() {
     </div>
   );
 }
-

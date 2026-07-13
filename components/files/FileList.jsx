@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Inbox, Send, FileText, Download, Lock, Hash,
   HardDrive, Mail, Link2, Copy, Check, Clock,
   ShieldOff, Shield, Trash2, X, ShieldAlert,
-  Search, CalendarRange, RotateCcw, CheckCircle2, Hourglass,
+  Search, CalendarRange, RotateCcw, CheckCircle2, Hourglass, Eye, MoreVertical,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Pagination from '@/components/ui/Pagination';
+import FileDetailModal from './FileDetailModal';
 import {
   formatDate, formatFileSize,
   triggerBlobDownload, getErrorMessage,
@@ -57,8 +58,99 @@ function FileTypeCell({ filename }) {
   );
 }
 
+// ── En-tête de colonne cliquable : ouvre un champ de filtre pour cette colonne ──
+function FilterableHeader({ label, icon: Icon, columnKey, value, openFilterCol, setOpenFilterCol, onApply, className = '' }) {
+  const isOpen = openFilterCol === columnKey;
+  const [draft, setDraft] = useState(value || '');
+
+  useEffect(() => { if (isOpen) setDraft(value || ''); }, [isOpen, value]);
+
+  const apply = () => {
+    onApply(columnKey, draft.trim());
+    setOpenFilterCol(null);
+  };
+
+  if (isOpen) {
+    return (
+      <th className={`px-4 py-2 ${className}`}>
+        <input
+          autoFocus
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') apply();
+            if (e.key === 'Escape') setOpenFilterCol(null);
+          }}
+          onBlur={apply}
+          placeholder={`Filtrer par ${label.toLowerCase()}…`}
+          className="w-full px-2 py-1.5 text-xs normal-case font-normal rounded-lg border border-NFS-border bg-white text-NFS-text focus:outline-none focus:ring-2 focus:ring-NFS-primary/30 focus:border-NFS-primary"
+        />
+      </th>
+    );
+  }
+
+  return (
+    <th
+      className={`px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider cursor-pointer select-none group ${className}`}
+      onClick={() => setOpenFilterCol(columnKey)}
+      title={`Filtrer par ${label.toLowerCase()}`}
+    >
+      <span className="inline-flex items-center gap-1.5">
+        {Icon && <Icon size={11} />}
+        {label}
+        <Search size={10} className={value ? 'text-NFS-primary' : 'text-transparent group-hover:text-NFS-muted/60 transition-colors'} />
+      </span>
+    </th>
+  );
+}
+
+// ── Menu "⋮" regroupant les actions secondaires d'une ligne ────────────────────
+function ActionsMenu({ items }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        title="Plus d'actions"
+        className={`p-1.5 rounded-lg border transition-all ${open ? 'bg-NFS-primary text-white border-NFS-primary' : 'text-NFS-muted bg-white hover:bg-NFS-100 border-NFS-border/50'}`}
+      >
+        <MoreVertical size={13} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-NFS-border rounded-xl shadow-lg py-1 z-20">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => { item.onClick(); setOpen(false); }}
+              disabled={item.disabled}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors disabled:opacity-50 ${
+                item.danger ? 'text-red-600 hover:bg-red-50' : 'text-NFS-dark hover:bg-NFS-100'
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Per-row component with its own action state ────────────────────────────────
-function FileTableRow({ file, mode, onUpdated, onDeleted }) {
+function FileTableRow({ file, mode, onUpdated, onDeleted, onViewDetails }) {
   const [panel, setPanel]           = useState(null); // null | 'download' | 'share'
   const [code, setCode]             = useState('');
   const [codeError, setCodeError]   = useState('');
@@ -163,8 +255,20 @@ function FileTableRow({ file, mode, onUpdated, onDeleted }) {
           </span>
         </td>
 
-        {/* Date */}
-        <td className="px-4 py-3.5 text-xs text-NFS-muted whitespace-nowrap">{formatDate(file.createdAt)}</td>
+        {/* Date + Expiration */}
+        <td className="px-4 py-3.5 text-xs whitespace-nowrap">
+          <div className="text-NFS-muted">{formatDate(file.createdAt)}</div>
+          {(() => {
+            const exp = new Date(new Date(file.createdAt).getTime() + 15 * 24 * 3600 * 1000);
+            const expired = exp < new Date();
+            return (
+              <div className={`flex items-center gap-1 mt-0.5 font-medium ${expired ? 'text-red-500' : 'text-NFS-muted/70'}`}>
+                <Clock size={10} />
+                {expired ? `Expiré le ${formatDate(exp)}` : `Expire le ${formatDate(exp)}`}
+              </div>
+            );
+          })()}
+        </td>
 
         {/* Statut */}
         <td className="px-4 py-3.5">
@@ -197,31 +301,12 @@ function FileTableRow({ file, mode, onUpdated, onDeleted }) {
 
         {/* Actions */}
         <td className="px-4 py-3.5">
-          <div className="flex items-center gap-1.5 flex-nowrap">
+          <div className="flex items-center justify-end gap-1.5 flex-nowrap">
             <button onClick={handleDownload} title="Télécharger"
               className="p-1.5 rounded-lg text-NFS-primary bg-NFS-100 hover:bg-NFS-primary hover:text-white border border-NFS-border/50 transition-all">
               <Download size={13} />
             </button>
-            {mode === 'sent' && (
-              <button onClick={() => setPanel(panel === 'share' ? null : 'share')} title="Lien de partage"
-                className={`p-1.5 rounded-lg border transition-all ${panel === 'share' ? 'bg-NFS-primary text-white border-NFS-primary' : 'text-NFS-muted bg-white hover:bg-NFS-100 border-NFS-border/50'}`}>
-                <Link2 size={13} />
-              </button>
-            )}
-            {mode === 'sent' && (
-              <button onClick={handleBlock} disabled={blocking} title={file.isBlocked ? 'Débloquer' : 'Bloquer'}
-                className={`p-1.5 rounded-lg border transition-all disabled:opacity-50 ${file.isBlocked ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
-                {blocking
-                  ? <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
-                  : file.isBlocked ? <Shield size={13} /> : <ShieldOff size={13} />}
-              </button>
-            )}
-            {mode === 'sent' && !confirmDel && (
-              <button onClick={handleDelete} title="Supprimer"
-                className="p-1.5 rounded-lg text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 transition-all">
-                <Trash2 size={13} />
-              </button>
-            )}
+
             {mode === 'sent' && confirmDel && (
               <div className="flex items-center gap-1">
                 <button onClick={handleDelete} disabled={deleting}
@@ -231,6 +316,22 @@ function FileTableRow({ file, mode, onUpdated, onDeleted }) {
                 <button onClick={() => setConfirmDel(false)}
                   className="px-2 py-1 rounded-lg text-xs border border-NFS-border text-NFS-muted hover:text-NFS-dark">✕</button>
               </div>
+            )}
+
+            {mode === 'sent' && !confirmDel && (
+              <ActionsMenu
+                items={[
+                  { label: 'Détails', icon: <Eye size={13} />, onClick: () => onViewDetails?.(file.id) },
+                  { label: 'Lien de partage', icon: <Link2 size={13} />, onClick: () => setPanel(panel === 'share' ? null : 'share') },
+                  {
+                    label: file.isBlocked ? 'Débloquer' : 'Bloquer',
+                    icon: file.isBlocked ? <Shield size={13} /> : <ShieldOff size={13} />,
+                    onClick: handleBlock,
+                    disabled: blocking,
+                  },
+                  { label: 'Supprimer', icon: <Trash2 size={13} />, onClick: () => setConfirmDel(true), danger: true },
+                ]}
+              />
             )}
           </div>
         </td>
@@ -315,14 +416,23 @@ function FileTableRow({ file, mode, onUpdated, onDeleted }) {
 export default function FileList({ files = [], mode, loading, onUpdated, onDeleted }) {
   const [page, setPage]         = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [refFilter, setRefFilter] = useState('');
+  const [filters, setFilters]   = useState({ reference: '', originalName: '', counterpart: '' });
+  const [openFilterCol, setOpenFilterCol] = useState(null);
   const [dateFrom, setDateFrom]   = useState('');
   const [dateTo, setDateTo]       = useState('');
+  const [detailFileId, setDetailFileId] = useState(null);
+
+  const applyFilter = (columnKey, value) => setFilters((prev) => ({ ...prev, [columnKey]: value }));
 
   // ── Client-side filtering ─────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return files.filter((f) => {
-      if (refFilter && !f.reference?.toLowerCase().includes(refFilter.toLowerCase())) return false;
+      if (filters.reference && !f.reference?.toLowerCase().includes(filters.reference.toLowerCase())) return false;
+      if (filters.originalName && !f.originalName?.toLowerCase().includes(filters.originalName.toLowerCase())) return false;
+      if (filters.counterpart) {
+        const counterpart = mode === 'inbox' ? f.sender?.email : f.receiverEmail;
+        if (!counterpart?.toLowerCase().includes(filters.counterpart.toLowerCase())) return false;
+      }
       if (dateFrom) {
         const from = new Date(dateFrom); from.setHours(0, 0, 0, 0);
         if (new Date(f.createdAt) < from) return false;
@@ -333,10 +443,14 @@ export default function FileList({ files = [], mode, loading, onUpdated, onDelet
       }
       return true;
     });
-  }, [files, refFilter, dateFrom, dateTo]);
+  }, [files, filters, dateFrom, dateTo, mode]);
 
-  const hasFilters = !!(refFilter || dateFrom || dateTo);
-  const resetFilters = () => { setRefFilter(''); setDateFrom(''); setDateTo(''); };
+  const hasFilters = !!(filters.reference || filters.originalName || filters.counterpart || dateFrom || dateTo);
+  const resetFilters = () => {
+    setFilters({ reference: '', originalName: '', counterpart: '' });
+    setDateFrom('');
+    setDateTo('');
+  };
 
   useEffect(() => { setPage(1); }, [filtered, pageSize]);
 
@@ -373,21 +487,8 @@ export default function FileList({ files = [], mode, loading, onUpdated, onDelet
   return (
     <div className="space-y-4">
 
-      {/* ── Filter bar ──────────────────────────────────────────────────────── */}
+      {/* ── Filter bar : uniquement l'intervalle de date d'envoi ──────────────── */}
       <div className="bg-white border border-NFS-border rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
-        {/* Reference search */}
-        <div className="relative flex-1 min-w-[180px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-NFS-muted pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Filtrer par référence…"
-            value={refFilter}
-            onChange={(e) => setRefFilter(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-NFS-border bg-NFS-100/40 text-NFS-text placeholder-NFS-muted focus:outline-none focus:ring-2 focus:ring-NFS-primary/30 focus:border-NFS-primary transition-all"
-          />
-        </div>
-
-        {/* Date range */}
         <div className="flex items-center gap-2 flex-wrap">
           <CalendarRange size={14} className="text-NFS-muted shrink-0" />
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
@@ -409,20 +510,23 @@ export default function FileList({ files = [], mode, loading, onUpdated, onDelet
         </span>
       </div>
 
+      <p className="text-xs text-NFS-muted">
+        Cliquez sur l&apos;en-tête d&apos;une colonne pour filtrer (référence, fichier, {mode === 'inbox' ? 'expéditeur' : 'destinataire'}).
+      </p>
+
       {/* ── Table ─────────────────────────────────────────────────────────────── */}
       <div className="bg-white border border-NFS-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-NFS-border bg-NFS-100/60">
-                <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5"><Hash size={11} /> Référence</span>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider">Fichier</th>
+                <FilterableHeader label="Référence" icon={Hash} columnKey="reference" value={filters.reference}
+                  openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
+                <FilterableHeader label="Fichier" columnKey="originalName" value={filters.originalName}
+                  openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
                 <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider whitespace-nowrap">Taille</th>
-                <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider">
-                  {mode === 'inbox' ? 'Expéditeur' : 'Destinataire'}
-                </th>
+                <FilterableHeader label={mode === 'inbox' ? 'Expéditeur' : 'Destinataire'} columnKey="counterpart" value={filters.counterpart}
+                  openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
                 <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider whitespace-nowrap">Date</th>
                 <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider">Statut</th>
                 <th className="px-4 py-3 text-xs font-semibold text-NFS-muted uppercase tracking-wider">Actions</th>
@@ -445,7 +549,7 @@ export default function FileList({ files = [], mode, loading, onUpdated, onDelet
                 </tr>
               ) : (
                 visibleFiles.map((file) => (
-                  <FileTableRow key={file.id} file={file} mode={mode} onUpdated={onUpdated} onDeleted={onDeleted} />
+                  <FileTableRow key={file.id} file={file} mode={mode} onUpdated={onUpdated} onDeleted={onDeleted} onViewDetails={setDetailFileId} />
                 ))
               )}
             </tbody>
@@ -457,6 +561,8 @@ export default function FileList({ files = [], mode, loading, onUpdated, onDelet
       {filtered.length > 0 && (
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length} onPage={setPage} onPageSize={setPageSize} />
       )}
+
+      <FileDetailModal open={!!detailFileId} onClose={() => setDetailFileId(null)} fileId={detailFileId} />
     </div>
   );
 }

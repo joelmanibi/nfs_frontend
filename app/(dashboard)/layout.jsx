@@ -8,14 +8,17 @@ import Topbar from '@/components/layout/Topbar';
 import { useAuth } from '@/context/AuthContext';
 
 export default function DashboardLayout({ children }) {
-  const { isAuthenticated, ready } = useAuth();
+  const { user, isAuthenticated, ready } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (ready && !isAuthenticated) {
+    if (!ready) return;
+    if (!isAuthenticated) {
       router.replace('/login');
+    } else if (user?.mustChangePassword) {
+      router.replace('/change-password');
     }
-  }, [ready, isAuthenticated, router]);
+  }, [ready, isAuthenticated, user, router]);
 
   if (!ready) {
     return (
@@ -25,7 +28,7 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated || user?.mustChangePassword) return null;
 
   return (
     <div className="flex min-h-screen bg-NFS-bg text-NFS-text">

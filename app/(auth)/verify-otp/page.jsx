@@ -79,7 +79,7 @@ function VerifyOTPForm() {
     try {
       const { data } = await authAPI.verifyOTP(email, otp);
       toast.success('Authentification réussie !');
-      login(data.token, data.user);
+      login(data.user);
     } catch (err) {
       if (err?.response?.status === 429) {
         const retryAfter = err?.response?.data?.retryAfter;

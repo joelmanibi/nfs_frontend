@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, Users, ArrowLeftRight, FileText,
+  LayoutDashboard, Users, ArrowLeftRight, FileText, FolderOpen,
   LogOut, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { href: '/admin',           icon: LayoutDashboard, label: 'Vue d\'ensemble' },
   { href: '/admin/users',     icon: Users,           label: 'Utilisateurs' },
   { href: '/admin/transfers', icon: ArrowLeftRight,  label: 'Transferts' },
+  { href: '/admin/collections', icon: FolderOpen,    label: 'Collecte de fichiers' },
   { href: '/admin/audit',     icon: FileText,        label: 'Rapport d\'audit' },
 ];
 
@@ -90,10 +91,11 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     if (!ready) return;
     if (!isAuthenticated) { router.replace('/login'); return; }
+    if (user?.mustChangePassword) { router.replace('/change-password'); return; }
     if (!['ADMIN', 'SUPER_ADMIN'].includes(user?.role)) { router.replace('/dashboard'); }
   }, [ready, isAuthenticated, user, router]);
 
-  if (!ready || !isAuthenticated || !['ADMIN', 'SUPER_ADMIN'].includes(user?.role)) {
+  if (!ready || !isAuthenticated || user?.mustChangePassword || !['ADMIN', 'SUPER_ADMIN'].includes(user?.role)) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="w-8 h-8 border-[3px] border-red-400 border-t-transparent rounded-full animate-spin" />
