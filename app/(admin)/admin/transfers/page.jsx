@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ArrowLeftRight, Link2, Filter, X, RefreshCw, Trash2, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeftRight, Link2, Filter, X, RefreshCw, Trash2, Lock, ChevronLeft, ChevronRight, Ban, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminAPI } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
@@ -67,7 +67,43 @@ function FilterableHeader({ label, columnKey, value, openFilterCol, setOpenFilte
   );
 }
 
-const EMPTY_FILTERS = { reference: '', originalName: '', senderEmail: '', receiverEmail: '' };
+// Badge "Bloqué" : blocage administrateur (date au survol) ou par l'expéditeur
+function BlockedBadge({ file }) {
+  if (file?.adminBlockedAt) {
+    return (
+      <span title={`Bloqué par un administrateur le ${new Date(file.adminBlockedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`}
+        className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 shrink-0">
+        <Ban size={9} /> Bloqué (admin)
+      </span>
+    );
+  }
+  if (file?.isBlocked) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-600/40 text-slate-300 shrink-0">
+        <Ban size={9} /> Bloqué (expéditeur)
+      </span>
+    );
+  }
+  return null;
+}
+
+function BlockButton({ file, busy, onClick }) {
+  const blocked = Boolean(file.adminBlockedAt);
+  return (
+    <button onClick={onClick} disabled={busy}
+      title={blocked ? 'Autoriser à nouveau le téléchargement' : 'Bloquer le téléchargement de ce fichier'}
+      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs border transition-all disabled:opacity-50 ${
+        blocked
+          ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20'
+          : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border-amber-500/20'
+      }`}>
+      {blocked ? <ShieldCheck size={12} /> : <Ban size={12} />}
+      {busy ? '...' : blocked ? 'Débloquer' : 'Bloquer'}
+    </button>
+  );
+}
+
+const EMPTY_FILTERS = { reference: '', senderEmail: '', receiverEmail: '' };
 
 export default function AdminTransfersPage() {
   const [tab, setTab]           = useState('all');   // 'all' | 'active'
@@ -80,13 +116,13 @@ export default function AdminTransfersPage() {
   const [openFilterCol, setOpenFilterCol] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [blocking, setBlocking] = useState(null);
 
   const fetchTransfers = useCallback(async (p = 1, f = filters) => {
     setLoading(true);
     try {
       const params = { page: p, limit: 20 };
       if (f.reference)     params.reference     = f.reference;
-      if (f.originalName)  params.originalName  = f.originalName;
       if (f.senderEmail)   params.senderEmail   = f.senderEmail;
       if (f.receiverEmail) params.receiverEmail = f.receiverEmail;
 
@@ -127,6 +163,19 @@ export default function AdminTransfersPage() {
   };
 
   const hasActiveFilters = Object.values(filters).some(Boolean);
+
+  const handleBlock = async (file) => {
+    const blocked = Boolean(file.adminBlockedAt);
+    if (!blocked && !confirm(`Bloquer le transfert ${file.reference || ''} ?\nLe fichier ne pourra plus être téléchargé (destinataire et liens de partage) et l'expéditeur ne pourra pas lever ce blocage.`)) return;
+    setBlocking(file.id);
+    try {
+      const { data } = await adminAPI.blockTransfer(file.id);
+      toast.success(data.adminBlockedAt ? 'Fichier bloqué.' : 'Fichier débloqué.');
+      setTransfers((prev) => prev.map((t) => t.id === file.id ? { ...t, adminBlockedAt: data.adminBlockedAt } : t));
+      setActiveLinks((prev) => prev.map((l) => l.file?.id === file.id ? { ...l, file: { ...l.file, adminBlockedAt: data.adminBlockedAt } } : l));
+    } catch (err) { toast.error(getErrorMessage(err)); }
+    finally { setBlocking(null); }
+  };
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ce transfert ? Les liens associés seront aussi supprimés.')) return;
@@ -180,7 +229,7 @@ export default function AdminTransfersPage() {
 
       {tab === 'all' && (
         <p className="text-xs text-slate-500 -mt-3">
-          Cliquez sur l&apos;en-tête d&apos;une colonne pour filtrer (référence, fichier, expéditeur, destinataire).
+          Cliquez sur l&apos;en-tête d&apos;une colonne pour filtrer (référence, expéditeur, destinataire).
         </p>
       )}
 
@@ -193,8 +242,6 @@ export default function AdminTransfersPage() {
                 <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wide">
                   <FilterableHeader label="Référence" columnKey="reference" value={filters.reference}
                     openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
-                  <FilterableHeader label="Fichier" columnKey="originalName" value={filters.originalName}
-                    openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} />
                   <FilterableHeader label="Expéditeur" columnKey="senderEmail" value={filters.senderEmail}
                     openFilterCol={openFilterCol} setOpenFilterCol={setOpenFilterCol} onApply={applyFilter} className="hidden md:table-cell" />
                   <FilterableHeader label="Destinataire" columnKey="receiverEmail" value={filters.receiverEmail}
@@ -206,16 +253,16 @@ export default function AdminTransfersPage() {
               </thead>
               <tbody className="divide-y divide-slate-700/50">
                 {loading ? (
-                  <tr><td colSpan={7} className="text-center text-slate-500 py-10">Chargement...</td></tr>
+                  <tr><td colSpan={6} className="text-center text-slate-500 py-10">Chargement...</td></tr>
                 ) : transfers.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center text-slate-500 py-10">Aucun transfert trouvé.</td></tr>
+                  <tr><td colSpan={6} className="text-center text-slate-500 py-10">Aucun transfert trouvé.</td></tr>
                 ) : transfers.map((t) => (
                   <tr key={t.id} className="hover:bg-slate-700/30 transition-colors">
-                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">{t.reference || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-white truncate max-w-[160px]">{t.originalName}</p>
+                        <span className="text-xs text-slate-300 font-mono">{t.reference || '—'}</span>
                         {t.isProtected && <Lock size={12} className="text-amber-400 shrink-0" />}
+                        <BlockedBadge file={t} />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-300 hidden md:table-cell text-xs">{t.sender?.email || '—'}</td>
@@ -225,10 +272,13 @@ export default function AdminTransfersPage() {
                       {new Date(t.createdAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => handleDelete(t.id)} disabled={deleting === t.id}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50">
-                        <Trash2 size={12} />{deleting === t.id ? '...' : 'Supprimer'}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <BlockButton file={t} busy={blocking === t.id} onClick={() => handleBlock(t)} />
+                        <button onClick={() => handleDelete(t.id)} disabled={deleting === t.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50">
+                          <Trash2 size={12} />{deleting === t.id ? '...' : 'Supprimer'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -256,6 +306,7 @@ export default function AdminTransfersPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-white truncate max-w-[160px]">{l.file?.originalName || '—'}</p>
                         {l.file?.isProtected && <Lock size={12} className="text-amber-400 shrink-0" />}
+                        <BlockedBadge file={l.file} />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs hidden md:table-cell">{l.file?.sender?.email || '—'}</td>
@@ -267,10 +318,13 @@ export default function AdminTransfersPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {l.file?.id && (
-                        <button onClick={() => handleDelete(l.file.id)} disabled={deleting === l.file.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50">
-                          <Trash2 size={12} />{deleting === l.file.id ? '...' : 'Supprimer'}
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <BlockButton file={l.file} busy={blocking === l.file.id} onClick={() => handleBlock(l.file)} />
+                          <button onClick={() => handleDelete(l.file.id)} disabled={deleting === l.file.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all disabled:opacity-50">
+                            <Trash2 size={12} />{deleting === l.file.id ? '...' : 'Supprimer'}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

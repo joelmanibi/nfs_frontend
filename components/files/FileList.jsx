@@ -278,9 +278,9 @@ function FileTableRow({ file, mode, onUpdated, onDeleted, onViewDetails }) {
                 <Lock size={10} /> Protégé
               </span>
             )}
-            {file.isBlocked && (
+            {(file.isBlocked || file.adminBlockedAt) && (
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-medium whitespace-nowrap">
-                <ShieldOff size={10} /> Bloqué
+                <ShieldOff size={10} /> {file.adminBlockedAt ? 'Bloqué par un administrateur' : 'Bloqué'}
               </span>
             )}
             {mode === 'sent' && (
@@ -295,7 +295,7 @@ function FileTableRow({ file, mode, onUpdated, onDeleted, onViewDetails }) {
                 </span>
               )
             )}
-            {mode === 'inbox' && !file.isProtected && !file.isBlocked && <span className="text-xs text-NFS-muted/40">—</span>}
+            {mode === 'inbox' && !file.isProtected && !file.isBlocked && !file.adminBlockedAt && <span className="text-xs text-NFS-muted/40">—</span>}
           </div>
         </td>
 

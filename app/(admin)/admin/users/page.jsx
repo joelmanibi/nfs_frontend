@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Users, Search, RefreshCw, Trash2, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Building2, Globe, Phone, Wifi, WifiOff, UserPlus, FileBarChart, Lock, Unlock, Ban } from 'lucide-react';
+import { Users, Search, RefreshCw, Trash2, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Building2, Globe, Phone, Wifi, WifiOff, UserPlus, FileBarChart, Lock, Unlock, Ban, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -44,7 +44,13 @@ function TypeBadge({ isInternal }) {
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
-  const [tab, setTab]           = useState('approved'); // 'approved' | 'pending'
+  // Hiérarchie : SUPER_ADMIN gère les ADMIN, ADMIN gère les USER (même règle que le backend)
+  const managedRole = currentUser?.role === 'SUPER_ADMIN' ? 'ADMIN' : currentUser?.role === 'ADMIN' ? 'USER' : null;
+  const canManage = (u) => Boolean(managedRole) && u.role === managedRole && u.id !== currentUser?.id;
+  // Bascule de rôle ADMIN ↔ USER réservée au SUPER_ADMIN
+  const canChangeRole = (u) => currentUser?.role === 'SUPER_ADMIN' && u.id !== currentUser?.id && ['ADMIN', 'USER'].includes(u.role);
+  const canHandlePending = currentUser?.role === 'ADMIN';
+  const [tab, setTab]           = useState('approved'); // 'approved' | 'blocked' | 'pending' | 'deleted'
   const [users, setUsers]       = useState([]);
   const [count, setCount]       = useState(0);
   const [pages, setPages]       = useState(1);
@@ -58,17 +64,24 @@ export default function AdminUsersPage() {
   const [updating, setUpdating]       = useState(null);
   const [togglingType, setTogglingType] = useState(null);
   const [blocking, setBlocking]       = useState(null);
+  const [blockedCount, setBlockedCount] = useState(0);
   // Pending
   const [pending, setPending]         = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [actioning, setActioning]     = useState(null); // userId being approved/rejected
+  // Deleted (suppression logique)
+  const [deletedUsers, setDeletedUsers]     = useState([]);
+  const [deletedCount, setDeletedCount]     = useState(0);
+  const [deletedLoading, setDeletedLoading] = useState(false);
+  const [restoring, setRestoring]           = useState(null);
   const [createOpen, setCreateOpen]   = useState(false);
   const [reportUser, setReportUser]   = useState(null);
 
-  const fetchUsers = useCallback(async (p = 1, s = search, tf = typeFilter, rf = roleFilter) => {
+  // Onglets "Comptes actifs" (non bloqués) et "Bloqués / inactifs" partagent la même liste
+  const fetchUsers = useCallback(async (p = 1, s = search, tf = typeFilter, rf = roleFilter, t = tab) => {
     setLoading(true);
     try {
-      const params = { page: p, limit: 20, search: s };
+      const params = { page: p, limit: 20, search: s, blocked: t === 'blocked' ? 'true' : 'false' };
       if (tf === 'internal') params.isInternal = 'true';
       if (tf === 'external') params.isInternal = 'false';
       if (rf !== 'all') params.role = rf;
@@ -82,7 +95,21 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, typeFilter, roleFilter]);
+  }, [search, typeFilter, roleFilter, tab]);
+
+  const fetchBlockedCount = useCallback(async () => {
+    try {
+      const { data } = await adminAPI.getUsers({ blocked: 'true', page: 1, limit: 1 });
+      setBlockedCount(data.count);
+    } catch {
+      // compteur indicatif uniquement
+    }
+  }, []);
+
+  const switchListTab = (t) => {
+    setTab(t);
+    fetchUsers(1, search, typeFilter, roleFilter, t);
+  };
 
   const fetchPending = useCallback(async () => {
     setPendingLoading(true);
@@ -96,7 +123,22 @@ export default function AdminUsersPage() {
     }
   }, []);
 
-  useEffect(() => { fetchUsers(1, ''); fetchPending(); }, []);
+  const fetchDeleted = useCallback(async () => {
+    setDeletedLoading(true);
+    try {
+      const { data } = await adminAPI.getUsers({ deleted: 'true', page: 1, limit: 100 });
+      setDeletedUsers(data.users);
+      setDeletedCount(data.count);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setDeletedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchUsers(1, ''); fetchDeleted(); fetchBlockedCount(); }, []);
+  // Les inscriptions en attente (comptes USER) ne concernent que les ADMIN
+  useEffect(() => { if (canHandlePending) fetchPending(); }, [canHandlePending]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -163,7 +205,10 @@ export default function AdminUsersPage() {
     try {
       const { data } = await adminAPI.blockUser(userId);
       toast.success(data.isBlocked ? 'Utilisateur bloqué.' : 'Utilisateur débloqué.');
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, isBlocked: data.isBlocked } : u));
+      // Le compte change d'onglet (actifs ↔ bloqués) : on le retire de la liste courante
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setCount((c) => c - 1);
+      setBlockedCount((c) => c + (data.isBlocked ? 1 : -1));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -172,17 +217,36 @@ export default function AdminUsersPage() {
   };
 
   const handleDelete = async (userId, email) => {
-    if (!confirm(`Supprimer le compte ${email} ? Cette action est irréversible.`)) return;
+    if (!confirm(`Supprimer le compte ${email} ?\nLe compte ne pourra plus se connecter mais pourra être restauré depuis l'onglet « Comptes supprimés ».`)) return;
     setDeleting(userId);
     try {
       await adminAPI.deleteUser(userId);
       toast.success('Utilisateur supprimé.');
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       setCount((c) => c - 1);
+      fetchDeleted();
+      fetchBlockedCount();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleRestore = async (userId, email) => {
+    if (!confirm(`Restaurer le compte ${email} ?`)) return;
+    setRestoring(userId);
+    try {
+      await adminAPI.restoreUser(userId);
+      toast.success('Utilisateur restauré.');
+      setDeletedUsers((prev) => prev.filter((u) => u.id !== userId));
+      setDeletedCount((c) => c - 1);
+      fetchUsers(page, search);
+      fetchBlockedCount();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setRestoring(null);
     }
   };
 
@@ -204,7 +268,7 @@ export default function AdminUsersPage() {
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all"
         >
           <UserPlus size={14} />
-          Créer un utilisateur
+          {managedRole === 'ADMIN' ? 'Créer un administrateur' : 'Créer un utilisateur'}
         </button>
       </div>
 
@@ -212,7 +276,7 @@ export default function AdminUsersPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={() => fetchUsers(page, search)}
-        canAssignSuperAdmin={currentUser?.role === 'SUPER_ADMIN'}
+        role={managedRole}
       />
 
       <UserReportModal
@@ -224,12 +288,23 @@ export default function AdminUsersPage() {
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-slate-800/50 rounded-xl p-1 w-fit border border-slate-700">
         <button
-          onClick={() => setTab('approved')}
+          onClick={() => switchListTab('approved')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'approved' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
         >
           <Users size={14} /> Comptes actifs
         </button>
         <button
+          onClick={() => switchListTab('blocked')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'blocked' ? 'bg-orange-500/20 text-orange-400' : 'text-slate-400 hover:text-white'}`}
+        >
+          <Ban size={14} /> Bloqués / inactifs
+          {blockedCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-orange-500 text-white text-xs font-bold">
+              {blockedCount}
+            </span>
+          )}
+        </button>
+        {canHandlePending && <button
           onClick={() => { setTab('pending'); fetchPending(); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white'}`}
         >
@@ -239,8 +314,77 @@ export default function AdminUsersPage() {
               {pending.length}
             </span>
           )}
+        </button>}
+        <button
+          onClick={() => { setTab('deleted'); fetchDeleted(); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'deleted' ? 'bg-red-500/20 text-red-400' : 'text-slate-400 hover:text-white'}`}
+        >
+          <Trash2 size={14} /> Comptes supprimés
+          {deletedCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-slate-600 text-white text-xs font-bold">
+              {deletedCount}
+            </span>
+          )}
         </button>
       </div>
+
+      {/* ── Onglet "Comptes supprimés" ── */}
+      {tab === 'deleted' && (
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+            <p className="text-sm font-medium text-white">Comptes supprimés (restaurables)</p>
+            <button onClick={fetchDeleted} className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-all">
+              <RefreshCw size={14} className={deletedLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wide">
+                  <th className="text-left px-4 py-3">Utilisateur</th>
+                  <th className="text-left px-4 py-3">Rôle</th>
+                  <th className="text-left px-4 py-3">Supprimé le</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Supprimé par</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {deletedLoading ? (
+                  <tr><td colSpan={5} className="text-center text-slate-500 py-10">Chargement...</td></tr>
+                ) : deletedUsers.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center text-slate-500 py-10">Aucun compte supprimé.</td></tr>
+                ) : deletedUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-700/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-white">{u.firstName} {u.lastName}</p>
+                        {u.isBlocked && <BlockedBadge />}
+                      </div>
+                      <p className="text-xs text-slate-400">{u.email}</p>
+                    </td>
+                    <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
+                    <td className="px-4 py-3 text-slate-300 text-xs">
+                      {new Date(u.deletedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 text-xs hidden md:table-cell">{u.deletedByName || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      {canManage(u) && (
+                        <button
+                          onClick={() => handleRestore(u.id, u.email)}
+                          disabled={restoring === u.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all disabled:opacity-50"
+                        >
+                          <RotateCcw size={12} /> {restoring === u.id ? '...' : 'Restaurer'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ── Onglet "En attente" ── */}
       {tab === 'pending' && (
@@ -295,8 +439,8 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* ── Onglet "Comptes actifs" ── */}
-      {tab === 'approved' && (<>
+      {/* ── Onglets "Comptes actifs" / "Bloqués / inactifs" ── */}
+      {(tab === 'approved' || tab === 'blocked') && (<>
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Filtre Interne / Externe */}
           <div className="flex items-center gap-1 bg-slate-800/50 rounded-xl p-1 border border-slate-700">
@@ -366,7 +510,7 @@ export default function AdminUsersPage() {
               {loading ? (
                 <tr><td colSpan={6} className="text-center text-slate-500 py-10">Chargement...</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center text-slate-500 py-10">Aucun utilisateur trouvé.</td></tr>
+                <tr><td colSpan={6} className="text-center text-slate-500 py-10">{tab === 'blocked' ? 'Aucun compte bloqué.' : 'Aucun utilisateur trouvé.'}</td></tr>
               ) : users.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-700/30 transition-colors">
                   <td className="px-4 py-3">
@@ -380,14 +524,18 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-300 hidden md:table-cell">{u.email}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleTypeToggle(u.id, u.isInternalUser)}
-                      disabled={togglingType === u.id}
-                      title="Cliquer pour basculer Interne / Externe"
-                      className="disabled:opacity-50 transition-opacity"
-                    >
+                    {canManage(u) ? (
+                      <button
+                        onClick={() => handleTypeToggle(u.id, u.isInternalUser)}
+                        disabled={togglingType === u.id}
+                        title="Cliquer pour basculer Interne / Externe"
+                        className="disabled:opacity-50 transition-opacity"
+                      >
+                        <TypeBadge isInternal={u.isInternalUser} />
+                      </button>
+                    ) : (
                       <TypeBadge isInternal={u.isInternalUser} />
-                    </button>
+                    )}
                     {u.organisation && (
                       <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                         <Building2 size={10} />{u.organisation}
@@ -395,9 +543,7 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {u.id === currentUser?.id ? (
-                      <RoleBadge role={u.role} />
-                    ) : currentUser?.role === 'SUPER_ADMIN' ? (
+                    {canChangeRole(u) ? (
                       <select
                         value={u.role}
                         disabled={updating === u.id}
@@ -406,7 +552,6 @@ export default function AdminUsersPage() {
                       >
                         <option value="USER">USER</option>
                         <option value="ADMIN">ADMIN</option>
-                        <option value="SUPER_ADMIN">SUPER_ADMIN</option>
                       </select>
                     ) : (
                       <RoleBadge role={u.role} />
@@ -424,7 +569,7 @@ export default function AdminUsersPage() {
                       >
                         <FileBarChart size={12} /> Rapport
                       </button>
-                      {u.id !== currentUser?.id && (u.role !== 'SUPER_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+                      {canManage(u) && (
                         <button
                           onClick={() => handleBlockToggle(u.id, u.isBlocked)}
                           disabled={blocking === u.id}
@@ -439,7 +584,7 @@ export default function AdminUsersPage() {
                           {blocking === u.id ? '...' : u.isBlocked ? 'Débloquer' : 'Bloquer'}
                         </button>
                       )}
-                      {u.id !== currentUser?.id && currentUser?.role === 'SUPER_ADMIN' && (
+                      {canManage(u) && (
                         <button
                           onClick={() => handleDelete(u.id, u.email)}
                           disabled={deleting === u.id}

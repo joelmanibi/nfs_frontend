@@ -14,14 +14,14 @@ const EMPTY_FORM = {
   organisation: '',
   country: '',
   city: '',
-  role: 'USER',
   isInternalUser: false,
 };
 
 const fieldClass = 'w-full bg-slate-900/60 border border-slate-700 text-sm text-white placeholder-slate-500 rounded-lg px-3 py-2 focus:outline-none focus:border-slate-500';
 const labelClass = 'block text-xs font-medium text-slate-400 mb-1';
 
-export default function CreateUserModal({ open, onClose, onCreated, canAssignSuperAdmin }) {
+// role : rôle imposé par la hiérarchie (SUPER_ADMIN → ADMIN, ADMIN → USER)
+export default function CreateUserModal({ open, onClose, onCreated, role }) {
   const [form, setForm]         = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,8 +42,8 @@ export default function CreateUserModal({ open, onClose, onCreated, canAssignSup
     e.preventDefault();
     setSubmitting(true);
     try {
-      await adminAPI.createUser(form);
-      toast.success('Utilisateur créé — un email avec son mot de passe lui a été envoyé.');
+      await adminAPI.createUser({ ...form, role });
+      toast.success(`${role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'} créé — un email avec son mot de passe lui a été envoyé.`);
       setForm(EMPTY_FORM);
       onCreated?.();
       onClose();
@@ -60,7 +60,7 @@ export default function CreateUserModal({ open, onClose, onCreated, canAssignSup
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
           <div className="flex items-center gap-2">
             <UserPlus size={18} className="text-blue-400" />
-            <h2 className="text-base font-semibold text-white">Créer un utilisateur</h2>
+            <h2 className="text-base font-semibold text-white">{role === 'ADMIN' ? 'Créer un administrateur' : 'Créer un utilisateur'}</h2>
           </div>
           <button onClick={handleClose} className="text-slate-400 hover:text-white transition-colors">
             <X size={18} />
@@ -114,11 +114,7 @@ export default function CreateUserModal({ open, onClose, onCreated, canAssignSup
           <div className="grid grid-cols-2 gap-3 items-end">
             <div>
               <label className={labelClass}>Rôle</label>
-              <select className={fieldClass} value={form.role} onChange={update('role')}>
-                <option value="USER">USER</option>
-                <option value="ADMIN">ADMIN</option>
-                {canAssignSuperAdmin && <option value="SUPER_ADMIN">SUPER_ADMIN</option>}
-              </select>
+              <input className={`${fieldClass} opacity-70 cursor-not-allowed`} value={role || ''} readOnly disabled />
             </div>
             <label className="flex items-center gap-2 text-sm text-slate-300 pb-2">
               <input type="checkbox" checked={form.isInternalUser} onChange={update('isInternalUser')}

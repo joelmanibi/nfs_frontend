@@ -115,7 +115,9 @@ export default function PublicDownloadPage() {
             <ShieldOff size={24} className="text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-NFS-dark">Fichier indisponible</h1>
-          <p className="text-sm text-NFS-muted">Ce fichier a été bloqué par l&apos;expéditeur et n&apos;est plus disponible au téléchargement.</p>
+          <p className="text-sm text-NFS-muted">
+            Ce fichier a été bloqué par {fileInfo?.blockedByAdmin ? 'un administrateur' : <>l&apos;expéditeur</>} et n&apos;est plus disponible au téléchargement.
+          </p>
         </div>
       </div>
     );

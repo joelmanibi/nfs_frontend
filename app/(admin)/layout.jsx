@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, ArrowLeftRight, FileText, FolderOpen,
-  LogOut, ChevronRight,
+  LogOut, ChevronRight, Terminal,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -16,6 +16,7 @@ const ADMIN_NAV = [
   { href: '/admin/transfers', icon: ArrowLeftRight,  label: 'Transferts' },
   { href: '/admin/collections', icon: FolderOpen,    label: 'Collecte de fichiers' },
   { href: '/admin/audit',     icon: FileText,        label: 'Rapport d\'audit' },
+  { href: '/admin/logs',      icon: Terminal,        label: 'Journaux techniques', superAdminOnly: true },
 ];
 
 function AdminSidebar() {
@@ -33,7 +34,7 @@ function AdminSidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-5 space-y-1">
-        {ADMIN_NAV.map(({ href, icon: Icon, label }) => {
+        {ADMIN_NAV.filter((item) => !item.superAdminOnly || user?.role === 'SUPER_ADMIN').map(({ href, icon: Icon, label }) => {
           const active = pathname === href;
           return (
             <Link

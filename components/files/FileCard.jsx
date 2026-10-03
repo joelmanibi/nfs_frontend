@@ -190,8 +190,8 @@ export default function FileCard({ file, mode, onUpdated, onDeleted }) {
             {file.isProtected && (
               <Badge color="yellow" dot><Lock size={10} /> Protégé</Badge>
             )}
-            {file.isBlocked && (
-              <Badge color="red" dot><ShieldOff size={10} /> Bloqué</Badge>
+            {(file.isBlocked || file.adminBlockedAt) && (
+              <Badge color="red" dot><ShieldOff size={10} /> {file.adminBlockedAt ? 'Bloqué par un administrateur' : 'Bloqué'}</Badge>
             )}
           </div>
         </div>
